@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>北岸每日派車</title>
+<title>每日派車管理系統</title>
 <style>body{margin:0}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Iansui&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
 /* Layout: ocean header band with a wave edge, date bar, then timeline (dispatched) above the unassigned queue. */
 :root{
@@ -39,6 +39,17 @@ header.top{background:var(--head);color:var(--head-ink);position:relative}
 header.top .wrap{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:20px 30px}
 .brand h1{font-family:var(--f-display);font-size:26px;margin:0;letter-spacing:.06em;text-wrap:balance}
 .brand p{margin:2px 0 0;font-size:12px;letter-spacing:.18em;opacity:.75}
+.brand{position:relative}
+.brand h1,.brand p{font-family:"Iansui",var(--f-body)}
+.brand h1{font-size:30px;font-weight:400;letter-spacing:.08em}
+.gulls{position:absolute;pointer-events:none;left:100%;top:-6px;width:150px;height:70px;margin-left:18px}
+.gulls span{position:absolute;display:block}
+.gulls svg{width:100%;height:auto;display:block}
+.g-w{fill:#F4FBFB}.g-t{fill:#5d7a82}
+.g1{left:0;top:18px;width:46px;transform:rotate(-6deg)}
+.g2{left:58px;top:0;width:32px;transform:rotate(8deg);opacity:.9}
+.g3{left:104px;top:28px;width:24px;transform:rotate(-4deg);opacity:.75}
+@media (max-width:640px){.brand{width:100%}.brand p .en{display:block}.brand p .dot{display:none}.brand p{letter-spacing:.12em}.gulls{left:auto;right:-8px;top:-14px;margin:0;transform:scale(.75);transform-origin:right top}}
 .wave{position:absolute;left:0;right:0;bottom:-1px;height:16px;display:block;width:100%}
 .wave path{fill:var(--bg)}
 nav.tabs{display:flex;gap:4px;flex-wrap:wrap}
@@ -163,8 +174,9 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
 <header class="top">
   <div class="wrap">
     <div class="brand">
-      <h1>北岸每日派車</h1>
-      <p>DAILY DISPATCH · 校車 · 補習班 · 旅遊 · 進香</p>
+      <h1>每日派車管理系統</h1>
+      <p><span class="en">DAILY DISPATCH<span class="dot"> · </span></span><span>北海之真情 · · 與您共享旅遊的歡愉</span></p>
+      <div class="gulls" aria-hidden="true"><span class="g1"><svg viewBox="0 0 64 26" aria-hidden="true"><path class="g-w" d="M2 13 C10 4 21 2 29 11 L32 14 L35 11 C43 2 54 4 62 13 C52 8 43 9 36 16 L32 19 L28 16 C21 9 12 8 2 13Z"/><path class="g-t" d="M2 13 C5 10 8 8.5 11 8 C9 9.5 7.5 10.5 6 12 Z M62 13 C59 10 56 8.5 53 8 C55 9.5 56.5 10.5 58 12 Z"/></svg></span><span class="g2"><svg viewBox="0 0 64 26" aria-hidden="true"><path class="g-w" d="M2 13 C10 4 21 2 29 11 L32 14 L35 11 C43 2 54 4 62 13 C52 8 43 9 36 16 L32 19 L28 16 C21 9 12 8 2 13Z"/><path class="g-t" d="M2 13 C5 10 8 8.5 11 8 C9 9.5 7.5 10.5 6 12 Z M62 13 C59 10 56 8.5 53 8 C55 9.5 56.5 10.5 58 12 Z"/></svg></span><span class="g3"><svg viewBox="0 0 64 26" aria-hidden="true"><path class="g-w" d="M2 13 C10 4 21 2 29 11 L32 14 L35 11 C43 2 54 4 62 13 C52 8 43 9 36 16 L32 19 L28 16 C21 9 12 8 2 13Z"/><path class="g-t" d="M2 13 C5 10 8 8.5 11 8 C9 9.5 7.5 10.5 6 12 Z M62 13 C59 10 56 8.5 53 8 C55 9.5 56.5 10.5 58 12 Z"/></svg></span></div>
     </div>
     <nav class="tabs" role="tablist" id="tabs">
       <button role="tab" data-tab="dash" aria-selected="true">儀表板</button>
@@ -345,7 +357,7 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
 <!-- Login gate -->
 <div id="login" class="login" hidden>
   <div class="login-card">
-    <h2>北岸每日派車</h2>
+    <h2>每日派車管理系統</h2>
     <p id="loginMsg">請用已加入名單的 Google 帳號（Gmail）登入。</p>
     <button class="btn primary" id="loginBtn">使用 Google 帳號登入</button>
   </div>
