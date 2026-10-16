@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>北岸每日派車</title>
+<style>body{margin:0}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: ocean header band with a wave edge, date bar, then timeline (dispatched) above the unassigned queue. */
+:root{
+  --bg:#F1F6F6; --surface:#FFFFFF; --surface-2:#E6F0F0; --ink:#12313A; --muted:#5A7279; --line:#D2E1E2;
+  --ocean:#0F5D73; --ocean-ink:#FFFFFF; --head:#0E4A5C; --head-ink:#F2FAFA; --foam:#BFE3E3; --sand:#EDE3CF;
+  --school:#2C6FB0; --cram:#178A7A; --tour:#C97B1E; --pilgrim:#B0433A;
+  --ok:#1D7F5A; --warn:#B7791F; --bad:#C0392B;
+  --f-display:"Noto Serif TC","Songti TC",serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B181D; --surface:#11242B; --surface-2:#173039; --ink:#E2EEEF; --muted:#8FA8AE; --line:#23414A;
+  --ocean:#5DB9CD; --ocean-ink:#05222A; --head:#082A33; --head-ink:#E2F3F3; --foam:#2C6B78; --sand:#3A3426;
+  --school:#6FA8E0; --cram:#4CC2AE; --tour:#E6A552; --pilgrim:#E07A6B;
+  --ok:#4CC28E; --warn:#E3B04B; --bad:#EF7A6C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B181D; --surface:#11242B; --surface-2:#173039; --ink:#E2EEEF; --muted:#8FA8AE; --line:#23414A;
+  --ocean:#5DB9CD; --ocean-ink:#05222A; --head:#082A33; --head-ink:#E2F3F3; --foam:#2C6B78; --sand:#3A3426;
+  --school:#6FA8E0; --cram:#4CC2AE; --tour:#E6A552; --pilgrim:#E07A6B;
+  --ok:#4CC28E; --warn:#E3B04B; --bad:#EF7A6C; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--head)}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ocean);outline-offset:2px}
+
+header.top{background:var(--head);color:var(--head-ink);position:relative}
+header.top .wrap{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:20px 30px}
+.brand h1{font-family:var(--f-display);font-size:26px;margin:0;letter-spacing:.06em;text-wrap:balance}
+.brand p{margin:2px 0 0;font-size:12px;letter-spacing:.18em;opacity:.75}
+.wave{position:absolute;left:0;right:0;bottom:-1px;height:16px;display:block;width:100%}
+.wave path{fill:var(--bg)}
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap}
+nav.tabs button{background:transparent;border:1px solid transparent;color:var(--head-ink);padding:7px 14px;border-radius:999px;cursor:pointer;opacity:.8;font-weight:500}
+nav.tabs button:hover{opacity:1;border-color:color-mix(in srgb,var(--head-ink) 30%,transparent)}
+nav.tabs button[aria-selected="true"]{background:var(--head-ink);color:var(--head);opacity:1}
+
+.banner{margin-top:14px;padding:10px 14px;border-radius:10px;background:var(--sand);font-size:13px}
+.datebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 14px}
+.datebar .day{font-family:var(--f-display);font-size:22px;font-weight:700;letter-spacing:.03em}
+.datebar .wk{color:var(--muted);font-size:14px;margin-left:4px}
+.iconbtn,.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;cursor:pointer}
+.iconbtn{width:34px;padding:6px 0;text-align:center}
+.btn:hover,.iconbtn:hover{border-color:var(--ocean)}
+.btn.primary{background:var(--ocean);color:var(--ocean-ink);border-color:var(--ocean);font-weight:500}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--bad)}
+.btn.danger.armed{background:var(--bad);color:#fff;border-color:var(--bad)}
+.btn.sm{padding:3px 9px;font-size:13px}
+.spacer{flex:1}
+input[type=date],input[type=time],input[type=text],input[type=number],input[type=tel],select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 9px;min-width:0}
+
+.stats{display:flex;flex-wrap:wrap;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
+.stat{flex:1 1 120px;padding:12px 16px;border-right:1px solid var(--line)}
+.stat:last-child{border-right:0}
+.stat .k{font-size:12px;color:var(--muted);letter-spacing:.08em}
+.stat .v{font-family:var(--f-mono);font-size:24px;font-variant-numeric:tabular-nums;line-height:1.2}
+.stat .v small{font-size:13px;color:var(--muted)}
+.stat.alert .v{color:var(--bad)}
+.stat.pend .v{color:var(--warn)}
+
+section.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-bottom:18px}
+.panel-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;border-bottom:1px solid var(--line)}
+.panel-h h2{font-family:var(--f-display);font-size:17px;margin:0;letter-spacing:.05em}
+.panel-h .sub{color:var(--muted);font-size:12px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.t-school{--tc:var(--school)} .t-cram{--tc:var(--cram)} .t-tour{--tc:var(--tour)} .t-pilgrim{--tc:var(--pilgrim)}
+
+/* timeline */
+.tl-scroll{overflow-x:auto}
+.tl{min-width:980px;padding:6px 0 10px}
+.tl-row{display:grid;grid-template-columns:170px 1fr;align-items:stretch;min-height:52px;border-bottom:1px dashed var(--line)}
+.tl-row:last-child{border-bottom:0}
+.tl-lab{padding:8px 12px 8px 16px;display:flex;flex-direction:column;justify-content:center;gap:1px;border-right:1px solid var(--line);position:sticky;left:0;background:var(--surface);z-index:2}
+.tl-lab .plate{font-family:var(--f-mono);font-size:14px}
+.tl-lab .meta{font-size:12px;color:var(--muted)}
+.tl-row.off .tl-lab .plate{text-decoration:line-through;color:var(--muted)}
+.tl-row.off .tl-track{background:repeating-linear-gradient(135deg,transparent 0 8px,color-mix(in srgb,var(--muted) 12%,transparent) 8px 9px)}
+.tl-track{position:relative;background-image:linear-gradient(to right,var(--line) 1px,transparent 1px);background-size:calc(100% / var(--h)) 100%}
+.tl-head .tl-track{background:none;height:26px}
+.tl-head .tl-lab{font-size:12px;color:var(--muted)}
+.tick{position:absolute;top:6px;font-family:var(--f-mono);font-size:11px;color:var(--muted);transform:translateX(-50%)}
+.grp{padding:8px 16px 4px;font-size:12px;letter-spacing:.2em;color:var(--muted);background:var(--surface-2);border-bottom:1px solid var(--line)}
+.blk{position:absolute;top:6px;bottom:6px;border-radius:7px;background:color-mix(in srgb,var(--tc) 16%,var(--surface));border:1px solid color-mix(in srgb,var(--tc) 55%,transparent);border-left:4px solid var(--tc);padding:3px 7px;overflow:hidden;cursor:pointer;text-align:left;font-size:12px;line-height:1.3;color:var(--ink)}
+.blk:hover{background:color-mix(in srgb,var(--tc) 26%,var(--surface));z-index:3}
+.blk b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.blk span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-family:var(--f-mono);font-size:11px}
+.blk.conflict{box-shadow:0 0 0 2px var(--bad)}
+.now{position:absolute;top:0;bottom:0;width:2px;background:var(--bad);z-index:1}
+.now::before{content:"";position:absolute;top:-3px;left:-3px;width:8px;height:8px;border-radius:50%;background:var(--bad)}
+
+/* queue */
+.queue{list-style:none;margin:0;padding:0}
+.q{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:12px 16px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);border-left:4px solid var(--tc)}
+.q:last-child{border-bottom:0}
+.q .time{font-family:var(--f-mono);font-size:15px;font-variant-numeric:tabular-nums}
+.q .time small{display:block;font-size:11px;color:var(--muted)}
+.q .who{min-width:0}
+.q .who b{font-size:15px}
+.q .route{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.q .act{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.q .act select{max-width:240px}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;background:color-mix(in srgb,var(--tc) 15%,transparent);color:var(--tc);border:1px solid color-mix(in srgb,var(--tc) 40%,transparent);white-space:nowrap;font-weight:500}
+.chip{display:inline-block;padding:0 7px;border-radius:5px;font-size:11px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
+.chip.big{background:color-mix(in srgb,var(--ocean) 14%,transparent);color:var(--ocean);border-color:color-mix(in srgb,var(--ocean) 35%,transparent)}
+.chip.sample{background:var(--sand);color:var(--ink);border-color:transparent}
+.chip.bad{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,transparent);background:color-mix(in srgb,var(--bad) 10%,transparent)}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
+
+/* tables */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.08em;background:var(--surface-2)}
+td.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td .row-act{display:flex;gap:6px;justify-content:flex-end}
+.muted{color:var(--muted)}
+
+/* dialog */
+dialog{border:1px solid var(--line);border-radius:16px;padding:0;background:var(--surface);color:var(--ink);width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
+dialog::backdrop{background:color-mix(in srgb,#04161c 55%,transparent)}
+dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 34px)}
+.dlg-h{padding:16px 20px;border-bottom:1px solid var(--line);font-family:var(--f-display);font-size:18px;font-weight:700}
+.dlg-b{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;overflow:auto}
+.dlg-b label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+.dlg-b label.full{grid-column:1/-1}
+.dlg-b label > *{color:var(--ink);font-size:14px}
+.dlg-f{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.warnline{grid-column:1/-1;color:var(--bad);font-size:13px;min-height:0}
+@media (max-width:640px){
+  .q{grid-template-columns:1fr}
+  .dlg-b{grid-template-columns:1fr}
+  .stat{flex-basis:45%;border-bottom:1px solid var(--line)}
+  .brand h1{font-size:22px}
+}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:10px;font-size:13px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>北岸每日派車</h1>
+      <p>DAILY DISPATCH · 校車 · 補習班 · 旅遊 · 進香</p>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-tab="dash" aria-selected="true">儀表板</button>
+      <button role="tab" data-tab="trips" aria-selected="false">車趟</button>
+      <button role="tab" data-tab="customers" aria-selected="false">客戶</button>
+      <button role="tab" data-tab="vehicles" aria-selected="false">車輛</button>
+    </nav>
+  </div>
+  <svg class="wave" viewBox="0 0 1200 16" preserveAspectRatio="none" aria-hidden="true"><path d="M0 10 C 100 2, 200 2, 300 9 S 500 16, 600 9 S 800 2, 900 9 S 1100 16, 1200 8 V16 H0Z"/></svg>
+</header>
+
+<main class="wrap">
+  <div id="banner" class="banner" hidden></div>
+
+  <div class="datebar" id="datebar">
+    <button class="iconbtn" id="prevDay" aria-label="前一天">‹</button>
+    <div><span class="day" id="dayLabel">—</span><span class="wk" id="wkLabel"></span></div>
+    <button class="iconbtn" id="nextDay" aria-label="後一天">›</button>
+    <input type="date" id="datePick" aria-label="選擇日期">
+    <button class="btn ghost" id="todayBtn">今天</button>
+    <span class="spacer"></span>
+    <button class="btn" id="copyPrev">複製前一日車趟</button>
+    <button class="btn primary" id="addTrip">＋ 新增車趟</button>
+  </div>
+
+  <div id="view-dash">
+    <div class="stats" id="stats"></div>
+    <section class="panel">
+      <div class="panel-h">
+        <h2>已派車 · 時間表</h2>
+        <span class="sub">點車趟可編輯；紅框為同車時段衝突</span>
+        <span class="spacer"></span>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="tl-scroll"><div class="tl" id="timeline"></div></div>
+    </section>
+    <section class="panel">
+      <div class="panel-h">
+        <h2>未派車趟</h2>
+        <span class="sub" id="queueSub"></span>
+      </div>
+      <ul class="queue" id="queue"></ul>
+    </section>
+  </div>
+
+  <div id="view-trips" hidden>
+    <section class="panel">
+      <div class="panel-h"><h2>當日車趟</h2><span class="sub" id="tripsSub"></span></div>
+      <div class="tbl-wrap"><table id="tripsTbl"></table></div>
+    </section>
+  </div>
+
+  <div id="view-customers" hidden>
+    <section class="panel">
+      <div class="panel-h"><h2>客戶資料</h2><span class="spacer"></span><button class="btn primary" id="addCust">＋ 新增客戶</button></div>
+      <div class="tbl-wrap"><table id="custTbl"></table></div>
+    </section>
+  </div>
+
+  <div id="view-vehicles" hidden>
+    <section class="panel">
+      <div class="panel-h"><h2>車輛資料</h2><span class="spacer"></span><button class="btn primary" id="addVeh">＋ 新增車輛</button></div>
+      <div class="tbl-wrap"><table id="vehTbl"></table></div>
+    </section>
+  </div>
+
+  <footer>
+    <span id="syncState">連線中…</span>
+    <span id="whoami"></span>
+    <span class="spacer"></span>
+    <button class="btn sm ghost" id="exportBtn" hidden>匯出備份</button>
+    <label class="btn sm ghost" id="importLbl" hidden>匯入備份<input type="file" id="importFile" accept="application/json,.json" hidden></label>
+    <button class="btn sm ghost" id="clearSample" hidden>清除範例資料</button>
+    <button class="btn sm ghost" id="logoutBtn" hidden>登出</button>
+  </footer>
+</main>
+
+<!-- Trip dialog -->
+<dialog id="tripDlg">
+  <form method="dialog" id="tripForm">
+    <div class="dlg-h" id="tripDlgTitle">新增車趟</div>
+    <div class="dlg-b">
+      <label>日期<input type="date" id="tf-date" required></label>
+      <label>車趟類型<select id="tf-type" required></select></label>
+      <label class="full">客戶<select id="tf-cust"></select></label>
+      <label>出車時間<input type="time" id="tf-start" required></label>
+      <label>結束時間<input type="time" id="tf-end" required></label>
+      <label>上車地點<input type="text" id="tf-pickup" placeholder="例：學校側門"></label>
+      <label>目的地 / 路線<input type="text" id="tf-dest" placeholder="例：九份 → 金瓜石"></label>
+      <label>人數<input type="number" id="tf-pax" min="0" inputmode="numeric"></label>
+      <label>需求車種<select id="tf-vtype"><option>大車</option><option>中車</option></select></label>
+      <label class="full">派車（可留空，之後再派）<select id="tf-veh"></select></label>
+      <label class="full">備註<input type="text" id="tf-note" placeholder="聯絡事項、隨車人員…"></label>
+      <div class="warnline" id="tf-warn"></div>
+    </div>
+    <div class="dlg-f">
+      <button type="button" class="btn danger" id="tf-del" hidden>刪除</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>取消</button>
+      <button type="submit" class="btn primary">儲存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Customer dialog -->
+<dialog id="custDlg">
+  <form method="dialog" id="custForm">
+    <div class="dlg-h" id="custDlgTitle">新增客戶</div>
+    <div class="dlg-b">
+      <label class="full">客戶名稱<input type="text" id="cf-name" required></label>
+      <label>類別<select id="cf-type"></select></label>
+      <label>聯絡人<input type="text" id="cf-contact"></label>
+      <label>電話<input type="tel" id="cf-phone"></label>
+      <label>常用上車地點<input type="text" id="cf-pickup"></label>
+      <label class="full">備註<input type="text" id="cf-note"></label>
+    </div>
+    <div class="dlg-f">
+      <button type="button" class="btn danger" id="cf-del" hidden>刪除</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>取消</button>
+      <button type="submit" class="btn primary">儲存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Vehicle dialog -->
+<dialog id="vehDlg">
+  <form method="dialog" id="vehForm">
+    <div class="dlg-h" id="vehDlgTitle">新增車輛</div>
+    <div class="dlg-b">
+      <label>車牌<input type="text" id="vf-plate" required placeholder="KAA-1234"></label>
+      <label>車種<select id="vf-type"><option>大車</option><option>中車</option></select></label>
+      <label>座位數<input type="number" id="vf-seats" min="1" inputmode="numeric"></label>
+      <label>狀態<select id="vf-status"><option>可派</option><option>維修</option><option>停用</option></select></label>
+      <label>司機<input type="text" id="vf-driver"></label>
+      <label>司機電話<input type="tel" id="vf-phone"></label>
+      <label class="full">備註<input type="text" id="vf-note"></label>
+    </div>
+    <div class="dlg-f">
+      <button type="button" class="btn danger" id="vf-del" hidden>刪除</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>取消</button>
+      <button type="submit" class="btn primary">儲存</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
+
+<!-- Login gate -->
+<div id="login" class="login" hidden>
+  <div class="login-card">
+    <h2>北岸每日派車</h2>
+    <p id="loginMsg">請用已加入名單的 Google 帳號（Gmail）登入。</p>
+    <button class="btn primary" id="loginBtn">使用 Google 帳號登入</button>
+  </div>
+</div>
+<style>
+.login{position:fixed;inset:0;z-index:40;background:color-mix(in srgb,var(--bg) 92%,transparent);display:grid;place-items:center;padding:16px}
+.login-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px 26px;max-width:380px;width:100%;text-align:center}
+.login-card h2{font-family:var(--f-display);margin:0 0 6px;letter-spacing:.06em}
+.login-card p{color:var(--muted);margin:0 0 18px}
+label.btn{display:inline-block}
+</style>
+
+<script type="module">
+/* Firebase SDK (pinned version). Your project settings live in firebase-config.js */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection as fsCollection, doc as fsDoc, query as fsQuery, where as fsWhere,
+  onSnapshot as fsOnSnapshot, getDocs, setDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const app = initializeApp(firebaseConfig);
+const fs = getFirestore(app);
+const auth = getAuth(app);
+
+/* Small adapter: db.collection(name).doc(id).set()/delete(), .where().get()/onSnapshot() */
+function makeQuery(q){
+  return {
+    where(f,op,v){ return makeQuery(fsQuery(q, fsWhere(f,op,v))); },
+    get(){ return getDocs(q); },
+    onSnapshot(next, err){ return fsOnSnapshot(q, next, err); },
+  };
+}
+function makeDb(){
+  return {
+    collection(name){
+      const ref = fsCollection(fs, name);
+      return Object.assign(makeQuery(ref), {
+        doc(id){ const d = id ? fsDoc(fs, name, id) : fsDoc(ref);
+          return { id: d.id, set: data => setDoc(d, data), delete: () => deleteDoc(d) }; },
+      });
+    },
+  };
+}
+
+const TYPES={school:'學校校車',cram:'學校補習班',tour:'旅遊團',pilgrim:'進香團'};
+const WK=['日','一','二','三','四','五','六'];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseYmd=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const shift=(s,n)=>{const d=parseYmd(s);d.setDate(d.getDate()+n);return ymd(d)};
+const mins=t=>{if(!t)return null;const[h,m]=t.split(':').map(Number);return h*60+m};
+
+const S={tab:'dash',date:ymd(new Date()),vehicles:[],customers:[],trips:[],ready:{v:false,c:false,t:false},live:false};
+let db=null,unsubTrips=null;
+
+try{const t=localStorage.getItem('dispatch.tab');if(t)S.tab=t}catch(e){}
+
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2200)}
+function errMsg(e){
+  const c=e&&e.code;
+  if(c==='permission-denied')return '這個帳號沒有權限，請聯絡系統管理員';
+  if(c==='resource-exhausted')return '已超過今日免費用量，請稍後再試';
+  if(c==='unavailable')return '網路中斷，恢復連線後會自動同步';
+  return '儲存失敗，請稍後再試';
+}
+
+/* ---------- data ---------- */
+async function save(coll,id,data){
+  if(!S.live){toast('資料庫未連線，無法儲存');return false}
+  try{const ref=id?db.collection(coll).doc(id):db.collection(coll).doc();await ref.set(data);return ref.id}
+  catch(e){toast(errMsg(e));return false}
+}
+async function remove(coll,id){
+  if(!S.live)return false;
+  try{await db.collection(coll).doc(id).delete();return true}catch(e){toast(errMsg(e));return false}
+}
+const vehById=id=>S.vehicles.find(v=>v.id===id);
+const custById=id=>S.customers.find(c=>c.id===id);
+const usable=v=>v&&(v.status||'可派')==='可派';
+function tripVeh(t){const v=t.vehicleId&&vehById(t.vehicleId);return v||null}
+function tripRange(t){const s=mins(t.start)??0;let e=mins(t.end);if(e==null||e<=s)e=s+60;return[s,e]}
+function overlaps(a,b){const[as,ae]=tripRange(a),[bs,be]=tripRange(b);return as<be&&bs<ae}
+function conflictsFor(trip,vehicleId){return S.trips.filter(o=>o.id!==trip.id&&o.vehicleId===vehicleId&&overlaps(o,trip))}
+function conflictIds(){
+  const ids=new Set();const byV={};
+  S.trips.forEach(t=>{if(tripVeh(t))(byV[t.vehicleId]??=[]).push(t)});
+  Object.values(byV).forEach(list=>{for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++)if(overlaps(list[i],list[j])){ids.add(list[i].id);ids.add(list[j].id)}});
+  return ids;
+}
+const sortVeh=(a,b)=>(a.type===b.type?0:a.type==='大車'?-1:1)||String(a.plate).localeCompare(String(b.plate));
+const sortTrip=(a,b)=>(mins(a.start)??0)-(mins(b.start)??0);
+
+/* ---------- render ---------- */
+function render(){
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===S.tab)));
+  ['dash','trips','customers','vehicles'].forEach(k=>$('#view-'+k).hidden=k!==S.tab);
+  $('#datebar').hidden=!(S.tab==='dash'||S.tab==='trips');
+  const d=parseYmd(S.date);
+  $('#dayLabel').textContent=`${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
+  $('#wkLabel').textContent=`星期${WK[d.getDay()]}${S.date===ymd(new Date())?'・今天':''}`;
+  $('#datePick').value=S.date;
+  const anySample=[...S.vehicles,...S.customers,...S.trips].some(x=>x.sample);
+  $('#clearSample').hidden=!(S.live&&anySample);
+  if(S.tab==='dash')renderDash();
+  if(S.tab==='trips')renderTrips();
+  if(S.tab==='customers')renderCust();
+  if(S.tab==='vehicles')renderVeh();
+}
+
+function typePill(t){return `<span class="pill t-${esc(t)}">${esc(TYPES[t]||'未分類')}</span>`}
+const sampleChip=x=>x.sample?' <span class="chip sample">範例</span>':'';
+
+function renderDash(){
+  const trips=[...S.trips].sort(sortTrip);
+  const assigned=trips.filter(t=>tripVeh(t));
+  const pending=trips.filter(t=>!tripVeh(t));
+  const conf=conflictIds();
+  const activeV=S.vehicles.filter(usable);
+  const busyV=new Set(assigned.map(t=>t.vehicleId));
+  const idle=activeV.filter(v=>!busyV.has(v.id)).length;
+  const loading=!(S.ready.t&&S.ready.v);
+  const n=v=>loading?'—':v;
+  $('#stats').innerHTML=`
+    <div class="stat"><div class="k">今日車趟</div><div class="v">${n(trips.length)}</div></div>
+    <div class="stat"><div class="k">已派車</div><div class="v">${n(assigned.length)}</div></div>
+    <div class="stat pend"><div class="k">待派車</div><div class="v">${n(pending.length)}</div></div>
+    <div class="stat"><div class="k">閒置可派車輛</div><div class="v">${n(idle)}<small> / ${n(activeV.length)}</small></div></div>
+    <div class="stat ${conf.size?'alert':''}"><div class="k">時段衝突</div><div class="v">${n(conf.size)}</div></div>`;
+  $('#legend').innerHTML=Object.entries(TYPES).map(([k,v])=>`<span class="t-${k}"><i style="background:var(--tc)"></i>${v}</span>`).join('');
+
+  // timeline
+  let h0=5,h1=23;
+  assigned.forEach(t=>{const[s,e]=tripRange(t);h0=Math.min(h0,Math.floor(s/60));h1=Math.max(h1,Math.ceil(e/60))});
+  const H=h1-h0,span=H*60;
+  const pct=m=>((m-h0*60)/span*100);
+  let html=`<div class="tl-row tl-head" style="--h:${H}"><div class="tl-lab">車輛 / 司機</div><div class="tl-track">`;
+  for(let h=h0;h<=h1;h+=1){if((h-h0)%1===0)html+=`<span class="tick" style="left:${pct(h*60)}%">${pad(h)}</span>`}
+  html+=`</div></div>`;
+  const vs=[...S.vehicles].sort(sortVeh);
+  const isToday=S.date===ymd(new Date());const nowM=new Date().getHours()*60+new Date().getMinutes();
+  if(loading){html+=`<div class="empty">正在載入車輛與車趟…</div>`}
+  else if(!vs.length){html+=`<div class="empty"><strong>還沒有車輛</strong>到「車輛」分頁新增大車、中車後，派好的車趟會依時間排在這裡。</div>`}
+  else{
+    let lastType=null;
+    vs.forEach(v=>{
+      if(v.type!==lastType){lastType=v.type;html+=`<div class="grp">${esc(v.type||'未分類')}</div>`}
+      const off=!usable(v);
+      html+=`<div class="tl-row ${off?'off':''}" style="--h:${H}"><div class="tl-lab"><span class="plate">${esc(v.plate)}</span><span class="meta">${esc(v.driver||'未指定司機')}${v.seats?` · ${esc(v.seats)}座`:''}${off?` · ${esc(v.status)}`:''}</span></div><div class="tl-track">`;
+      if(isToday&&nowM>=h0*60&&nowM<=h1*60)html+=`<span class="now" style="left:${pct(nowM)}%"></span>`;
+      assigned.filter(t=>t.vehicleId===v.id).forEach(t=>{
+        const[s,e]=tripRange(t);const c=custById(t.customerId);
+        html+=`<button class="blk t-${esc(t.type)} ${conf.has(t.id)?'conflict':''}" style="left:${pct(s)}%;width:${pct(e)-pct(s)}%" data-edit="${esc(t.id)}" title="${esc(`${t.start}–${t.end} ${c?c.name:''} ${t.destination||''}`)}"><b>${esc(c?c.name:TYPES[t.type])}</b><span>${esc(t.start)}–${esc(t.end)} ${esc(t.destination||'')}</span></button>`;
+      });
+      html+=`</div></div>`;
+    });
+  }
+  $('#timeline').innerHTML=html;
+
+  // queue
+  $('#queueSub').textContent=loading?'':(pending.length?`${pending.length} 趟待安排，依出車時間排序`:'');
+  if(loading){$('#queue').innerHTML=`<li class="empty">正在載入…</li>`;return}
+  if(!trips.length){$('#queue').innerHTML=`<li class="empty"><strong>這一天還沒有車趟</strong>按「＋ 新增車趟」建立，或用「複製前一日車趟」帶入固定的校車、補習班班次。</li>`;return}
+  if(!pending.length){$('#queue').innerHTML=`<li class="empty"><strong>全部派車完成</strong>這一天的 ${trips.length} 趟車都已安排車輛。</li>`;return}
+  const keep={};document.querySelectorAll('[data-assign-sel]').forEach(s=>{if(s.value)keep[s.dataset.assignSel]=s.value});
+  $('#queue').innerHTML=pending.map(t=>{
+    const c=custById(t.customerId);
+    const opts=vehicleOptions(t,null);
+    return `<li class="q t-${esc(t.type)}">
+      <div class="time">${esc(t.start||'--:--')}<small>至 ${esc(t.end||'--:--')}</small></div>
+      <div class="who">
+        <div>${typePill(t.type)} <b>${esc(c?c.name:'未指定客戶')}</b>${sampleChip(t)}</div>
+        <div class="route">${esc(t.pickup||'—')} → ${esc(t.destination||'—')} · ${t.pax?esc(t.pax)+' 人':'人數未填'} · 需 <span class="chip big">${esc(t.vehicleType||'不限')}</span>${t.note?` · ${esc(t.note)}`:''}</div>
+      </div>
+      <div class="act">
+        <select data-assign-sel="${esc(t.id)}" aria-label="選擇車輛">${opts}</select>
+        <button class="btn primary sm" data-assign="${esc(t.id)}">派車</button>
+        <button class="btn sm ghost" data-edit="${esc(t.id)}">編輯</button>
+      </div></li>`;
+  }).join('');
+  Object.entries(keep).forEach(([id,v])=>{const s=document.querySelector(`[data-assign-sel="${CSS.escape(id)}"]`);if(s)s.value=v});
+}
+
+function vehicleOptions(trip,current){
+  const vs=[...S.vehicles].sort(sortVeh);
+  const rank=v=>{
+    const busy=conflictsFor(trip,v.id).length>0;
+    const match=!trip.vehicleType||v.type===trip.vehicleType;
+    return (usable(v)?0:4)+(busy?2:0)+(match?0:1);
+  };
+  vs.sort((a,b)=>rank(a)-rank(b)||sortVeh(a,b));
+  let html=`<option value="">${current===null?'選擇車輛…':'（不派車）'}</option>`;
+  vs.forEach(v=>{
+    const busy=conflictsFor(trip,v.id);
+    const off=!usable(v);
+    const match=!trip.vehicleType||v.type===trip.vehicleType;
+    let tag=off?`・${v.status}`:busy.length?'・時段衝突':match?'':`・非${trip.vehicleType}`;
+    const seatWarn=trip.pax&&v.seats&&Number(trip.pax)>Number(v.seats)?'・座位不足':'';
+    html+=`<option value="${esc(v.id)}" ${v.id===current?'selected':''} ${off&&v.id!==current?'disabled':''}>${esc(v.plate)}｜${esc(v.type)}｜${esc(v.driver||'無司機')}${esc(tag+seatWarn)}</option>`;
+  });
+  return html;
+}
+
+function renderTrips(){
+  const trips=[...S.trips].sort(sortTrip);
+  const conf=conflictIds();
+  $('#tripsSub').textContent=trips.length?`共 ${trips.length} 趟`:'';
+  if(!S.ready.t){$('#tripsTbl').innerHTML=`<tr><td class="empty">正在載入…</td></tr>`;return}
+  if(!trips.length){$('#tripsTbl').innerHTML=`<tr><td class="empty"><strong>這一天還沒有車趟</strong>按上方「＋ 新增車趟」開始。</td></tr>`;return}
+  $('#tripsTbl').innerHTML=`<thead><tr><th>時間</th><th>類型</th><th>客戶</th><th>上車 → 目的地</th><th>人數</th><th>需求</th><th>派車</th><th></th></tr></thead><tbody>`+
+  trips.map(t=>{const c=custById(t.customerId);const v=tripVeh(t);
+    return `<tr><td class="mono">${esc(t.start)}–${esc(t.end)}</td><td>${typePill(t.type)}</td><td>${esc(c?c.name:'—')}${sampleChip(t)}</td><td>${esc(t.pickup||'—')} → ${esc(t.destination||'—')}${t.note?`<div class="muted" style="font-size:12px">${esc(t.note)}</div>`:''}</td><td class="mono">${esc(t.pax||'—')}</td><td><span class="chip big">${esc(t.vehicleType||'不限')}</span></td><td>${v?`<span class="mono">${esc(v.plate)}</span> <span class="muted">${esc(v.driver||'')}</span>${conf.has(t.id)?' <span class="chip bad">衝突</span>':''}`:'<span class="chip bad">未派</span>'}</td><td><div class="row-act"><button class="btn sm" data-edit="${esc(t.id)}">編輯</button></div></td></tr>`}).join('')+`</tbody>`;
+}
+
+function renderCust(){
+  if(!S.ready.c){$('#custTbl').innerHTML=`<tr><td class="empty">正在載入…</td></tr>`;return}
+  if(!S.customers.length){$('#custTbl').innerHTML=`<tr><td class="empty"><strong>還沒有客戶</strong>新增學校、補習班、旅行社或宮廟，建立車趟時就能直接選。</td></tr>`;return}
+  const list=[...S.customers].sort((a,b)=>String(a.type).localeCompare(String(b.type))||String(a.name).localeCompare(String(b.name)));
+  $('#custTbl').innerHTML=`<thead><tr><th>客戶名稱</th><th>類別</th><th>聯絡人</th><th>電話</th><th>常用上車地點</th><th>備註</th><th></th></tr></thead><tbody>`+
+  list.map(c=>`<tr><td><b>${esc(c.name)}</b>${sampleChip(c)}</td><td>${typePill(c.type)}</td><td>${esc(c.contact||'—')}</td><td class="mono">${esc(c.phone||'—')}</td><td>${esc(c.pickup||'—')}</td><td class="muted">${esc(c.note||'')}</td><td><div class="row-act"><button class="btn sm" data-cust="${esc(c.id)}">編輯</button></div></td></tr>`).join('')+`</tbody>`;
+}
+
+function renderVeh(){
+  if(!S.ready.v){$('#vehTbl').innerHTML=`<tr><td class="empty">正在載入…</td></tr>`;return}
+  if(!S.vehicles.length){$('#vehTbl').innerHTML=`<tr><td class="empty"><strong>還沒有車輛</strong>新增車牌、車種（大車／中車）與司機，就能開始派車。</td></tr>`;return}
+  $('#vehTbl').innerHTML=`<thead><tr><th>車牌</th><th>車種</th><th>座位</th><th>司機</th><th>司機電話</th><th>狀態</th><th>備註</th><th></th></tr></thead><tbody>`+
+  [...S.vehicles].sort(sortVeh).map(v=>`<tr><td class="mono"><b>${esc(v.plate)}</b>${sampleChip(v)}</td><td><span class="chip big">${esc(v.type)}</span></td><td class="mono">${esc(v.seats||'—')}</td><td>${esc(v.driver||'—')}</td><td class="mono">${esc(v.phone||'—')}</td><td>${usable(v)?'<span class="chip">可派</span>':`<span class="chip bad">${esc(v.status)}</span>`}</td><td class="muted">${esc(v.note||'')}</td><td><div class="row-act"><button class="btn sm" data-veh="${esc(v.id)}">編輯</button></div></td></tr>`).join('')+`</tbody>`;
+}
+
+/* ---------- dialogs ---------- */
+function armDelete(btn,fn){
+  btn.classList.remove('armed');btn.textContent='刪除';
+  btn.onclick=()=>{if(!btn.classList.contains('armed')){btn.classList.add('armed');btn.textContent='再按一次確認刪除';return}fn()};
+}
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>b.closest('dialog').close()));
+
+let editingTrip=null;
+function fillTypeSelect(sel,val){sel.innerHTML=Object.entries(TYPES).map(([k,v])=>`<option value="${k}" ${k===val?'selected':''}>${v}</option>`).join('')}
+function tripFromForm(){
+  return{date:$('#tf-date').value,type:$('#tf-type').value,customerId:$('#tf-cust').value||null,start:$('#tf-start').value,end:$('#tf-end').value,
+    pickup:$('#tf-pickup').value.trim(),destination:$('#tf-dest').value.trim(),pax:$('#tf-pax').value?Number($('#tf-pax').value):null,
+    vehicleType:$('#tf-vtype').value,vehicleId:$('#tf-veh').value||null,note:$('#tf-note').value.trim()};
+}
+function refreshTripVehSelect(){
+  const t={...tripFromForm(),id:editingTrip?.id};
+  const cur=$('#tf-veh').value||null;
+  // conflict check only valid for the date being viewed
+  $('#tf-veh').innerHTML=vehicleOptions(t.date===S.date?t:{...t,id:'__x'},cur).replace('選擇車輛…','（暫不派車）');
+  if(cur)$('#tf-veh').value=cur;
+  const w=[];
+  if(t.vehicleId&&t.date===S.date){const c=conflictsFor(t,t.vehicleId);if(c.length)w.push(`此車在 ${c.map(x=>x.start+'–'+x.end).join('、')} 已有車趟`)}
+  const v=t.vehicleId&&vehById(t.vehicleId);
+  if(v&&t.pax&&v.seats&&t.pax>v.seats)w.push(`人數 ${t.pax} 超過座位 ${v.seats}`);
+  if(t.start&&t.end&&mins(t.end)<=mins(t.start))w.push('結束時間需晚於出車時間');
+  $('#tf-warn').textContent=w.join('；');
+}
+function openTrip(t){
+  editingTrip=t||null;
+  $('#tripDlgTitle').textContent=t?'編輯車趟':'新增車趟';
+  $('#tf-date').value=t?.date||S.date;
+  fillTypeSelect($('#tf-type'),t?.type||'school');
+  $('#tf-cust').innerHTML=`<option value="">（未指定）</option>`+[...S.customers].sort((a,b)=>String(a.name).localeCompare(String(b.name))).map(c=>`<option value="${esc(c.id)}">${esc(c.name)}｜${esc(TYPES[c.type]||'')}</option>`).join('');
+  $('#tf-cust').value=t?.customerId||'';
+  $('#tf-start').value=t?.start||'07:00';$('#tf-end').value=t?.end||'08:00';
+  $('#tf-pickup').value=t?.pickup||'';$('#tf-dest').value=t?.destination||'';
+  $('#tf-pax').value=t?.pax??'';$('#tf-vtype').value=t?.vehicleType||'大車';$('#tf-note').value=t?.note||'';
+  $('#tf-veh').innerHTML='';$('#tf-veh').value='';
+  refreshTripVehSelect();
+  if(t?.vehicleId&&vehById(t.vehicleId))$('#tf-veh').value=t.vehicleId;
+  refreshTripVehSelect();
+  const del=$('#tf-del');del.hidden=!t;
+  if(t)armDelete(del,async()=>{if(await remove('trips',t.id)){$('#tripDlg').close();toast('已刪除車趟')}});
+  $('#tripDlg').showModal();
+}
+['tf-start','tf-end','tf-vtype','tf-veh','tf-pax','tf-date'].forEach(id=>$('#'+id).addEventListener('change',refreshTripVehSelect));
+$('#tf-cust').addEventListener('change',()=>{const c=custById($('#tf-cust').value);if(!c)return;if(c.type)$('#tf-type').value=c.type;if(!$('#tf-pickup').value&&c.pickup)$('#tf-pickup').value=c.pickup});
+$('#tripForm').addEventListener('submit',async e=>{
+  e.preventDefault();const data=tripFromForm();
+  if(mins(data.end)<=mins(data.start)){$('#tf-warn').textContent='結束時間需晚於出車時間';return}
+  if(editingTrip?.sample)data.sample=true;
+  data.updatedAt=new Date().toISOString();
+  if(await save('trips',editingTrip?.id,data)){$('#tripDlg').close();toast(editingTrip?'已更新車趟':'已新增車趟');if(data.date!==S.date)setDate(data.date)}
+});
+
+let editingCust=null;
+function openCust(c){
+  editingCust=c||null;$('#custDlgTitle').textContent=c?'編輯客戶':'新增客戶';
+  $('#cf-name').value=c?.name||'';fillTypeSelect($('#cf-type'),c?.type||'school');
+  $('#cf-contact').value=c?.contact||'';$('#cf-phone').value=c?.phone||'';$('#cf-pickup').value=c?.pickup||'';$('#cf-note').value=c?.note||'';
+  const del=$('#cf-del');del.hidden=!c;
+  if(c)armDelete(del,async()=>{if(await remove('customers',c.id)){$('#custDlg').close();toast('已刪除客戶')}});
+  $('#custDlg').showModal();
+}
+$('#custForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const data={name:$('#cf-name').value.trim(),type:$('#cf-type').value,contact:$('#cf-contact').value.trim(),phone:$('#cf-phone').value.trim(),pickup:$('#cf-pickup').value.trim(),note:$('#cf-note').value.trim()};
+  if(!data.name)return;if(editingCust?.sample)data.sample=true;
+  if(await save('customers',editingCust?.id,data)){$('#custDlg').close();toast('已儲存客戶')}
+});
+
+let editingVeh=null;
+function openVeh(v){
+  editingVeh=v||null;$('#vehDlgTitle').textContent=v?'編輯車輛':'新增車輛';
+  $('#vf-plate').value=v?.plate||'';$('#vf-type').value=v?.type||'大車';$('#vf-seats').value=v?.seats??'';
+  $('#vf-status').value=v?.status||'可派';$('#vf-driver').value=v?.driver||'';$('#vf-phone').value=v?.phone||'';$('#vf-note').value=v?.note||'';
+  const del=$('#vf-del');del.hidden=!v;
+  if(v)armDelete(del,async()=>{if(await remove('vehicles',v.id)){$('#vehDlg').close();toast('已刪除車輛')}});
+  $('#vehDlg').showModal();
+}
+$('#vehForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const data={plate:$('#vf-plate').value.trim().toUpperCase(),type:$('#vf-type').value,seats:$('#vf-seats').value?Number($('#vf-seats').value):null,status:$('#vf-status').value,driver:$('#vf-driver').value.trim(),phone:$('#vf-phone').value.trim(),note:$('#vf-note').value.trim()};
+  if(!data.plate)return;if(editingVeh?.sample)data.sample=true;
+  if(await save('vehicles',editingVeh?.id,data)){$('#vehDlg').close();toast('已儲存車輛')}
+});
+
+/* ---------- events ---------- */
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.tab){S.tab=b.dataset.tab;try{localStorage.setItem('dispatch.tab',S.tab)}catch(_){ }render();return}
+  if(b.dataset.edit){const t=S.trips.find(x=>x.id===b.dataset.edit);if(t)openTrip(t);return}
+  if(b.dataset.cust){openCust(custById(b.dataset.cust));return}
+  if(b.dataset.veh){openVeh(vehById(b.dataset.veh));return}
+  if(b.dataset.assign){
+    const id=b.dataset.assign;const sel=document.querySelector(`[data-assign-sel="${CSS.escape(id)}"]`);
+    if(!sel.value){toast('請先選擇車輛');return}
+    const t=S.trips.find(x=>x.id===id);const{id:_,...rest}=t;
+    b.disabled=true;
+    if(await save('trips',id,{...rest,vehicleId:sel.value,updatedAt:new Date().toISOString()})){const v=vehById(sel.value);toast(`已派 ${v?v.plate:''}`)}
+    b.disabled=false;
+  }
+});
+function setDate(d){if(d===S.date)return;S.date=d;S.trips=[];S.ready.t=false;subTrips();render()}
+$('#prevDay').onclick=()=>setDate(shift(S.date,-1));
+$('#nextDay').onclick=()=>setDate(shift(S.date,1));
+$('#todayBtn').onclick=()=>setDate(ymd(new Date()));
+$('#datePick').onchange=e=>{if(e.target.value)setDate(e.target.value)};
+$('#addTrip').onclick=()=>openTrip(null);
+$('#addCust').onclick=()=>openCust(null);
+$('#addVeh').onclick=()=>openVeh(null);
+$('#copyPrev').onclick=async()=>{
+  if(!S.live){toast('資料庫未連線');return}
+  const prev=shift(S.date,-1);
+  try{
+    const snap=await db.collection('trips').where('date','==',prev).get();
+    if(snap.empty){toast(`${prev} 沒有車趟可複製`);return}
+    const have=new Set(S.trips.map(t=>`${t.customerId}|${t.start}|${t.type}`));
+    let n=0;
+    for(const d of snap.docs){const t=d.data();const key=`${t.customerId}|${t.start}|${t.type}`;if(have.has(key))continue;
+      const{sample,...rest}=t;await db.collection('trips').doc().set({...rest,date:S.date,updatedAt:new Date().toISOString()});n++}
+    toast(n?`已從前一日複製 ${n} 趟（保留原派車）`:'前一日車趟已全部存在');
+  }catch(e){toast(errMsg(e))}
+};
+let clearArmed=false;
+$('#clearSample').onclick=async()=>{
+  const b=$('#clearSample');
+  if(!clearArmed){clearArmed=true;b.textContent='再按一次，刪除所有範例資料';b.classList.add('danger');setTimeout(()=>{clearArmed=false;b.textContent='清除範例資料';b.classList.remove('danger')},4000);return}
+  clearArmed=false;b.textContent='清除中…';
+  try{
+    for(const coll of ['trips','customers','vehicles']){
+      const snap=await db.collection(coll).where('sample','==',true).get();
+      for(const d of snap.docs)await db.collection(coll).doc(d.id).delete();
+    }
+    toast('已清除範例資料');
+  }catch(e){toast(errMsg(e))}
+  b.textContent='清除範例資料';b.classList.remove('danger');
+};
+
+/* ---------- boot ---------- */
+function subTrips(){
+  if(!db)return;unsubTrips?.();
+  const want=S.date;
+  unsubTrips=db.collection('trips').where('date','==',want).onSnapshot(s=>{
+    if(S.date!==want)return;S.trips=s.docs.map(d=>({id:d.id,...d.data()}));S.ready.t=true;render();
+  },onDbErr);
+}
+function onDbErr(e){
+  if(e&&e.code==='permission-denied'){
+    $('#loginMsg').textContent='這個帳號不在使用名單裡，請管理員把你的 Gmail 加入名單。';
+    signOut(auth);return;
+  }
+  $('#syncState').textContent='同步中斷，請重新整理頁面';
+}
+let unsubs=[];
+function stopAll(){unsubs.forEach(u=>u());unsubs=[];unsubTrips?.();unsubTrips=null}
+function boot(){
+  render();
+  onAuthStateChanged(auth,user=>{
+    stopAll();
+    if(!user){
+      db=null;S.live=false;S.vehicles=[];S.customers=[];S.trips=[];S.ready={v:false,c:false,t:false};
+      $('#login').hidden=false;['exportBtn','importLbl','logoutBtn'].forEach(id=>$('#'+id).hidden=true);
+      $('#whoami').textContent='';$('#syncState').textContent='尚未登入';render();return;
+    }
+    $('#login').hidden=true;
+    db=makeDb();S.live=true;
+    $('#whoami').textContent='· '+(user.email||'');
+    ['exportBtn','importLbl','logoutBtn'].forEach(id=>$('#'+id).hidden=false);
+    $('#syncState').textContent='已連線 · 資料即時同步';
+    unsubs.push(db.collection('vehicles').onSnapshot(s=>{S.vehicles=s.docs.map(d=>({id:d.id,...d.data()}));S.ready.v=true;render()},onDbErr));
+    unsubs.push(db.collection('customers').onSnapshot(s=>{S.customers=s.docs.map(d=>({id:d.id,...d.data()}));S.ready.c=true;render()},onDbErr));
+    subTrips();
+  });
+  setInterval(()=>{if(S.tab==='dash'&&S.date===ymd(new Date()))renderDash()},60000);
+}
+$('#loginBtn').onclick=async()=>{
+  try{await signInWithPopup(auth,new GoogleAuthProvider())}
+  catch(e){if(e.code!=='auth/popup-closed-by-user')$('#loginMsg').textContent='登入失敗：'+(e.code||e.message)}
+};
+$('#logoutBtn').onclick=()=>signOut(auth);
+
+/* ---------- backup ---------- */
+const COLLS=['vehicles','customers','trips'];
+$('#exportBtn').onclick=async()=>{
+  try{
+    const out={app:'north-coast-dispatch',version:1,exportedAt:new Date().toISOString()};
+    for(const c of COLLS){const snap=await getDocs(fsCollection(fs,c));out[c]=snap.docs.map(d=>({id:d.id,...d.data()}))}
+    const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`派車備份-${ymd(new Date())}.json`;
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    toast(`已匯出：車輛 ${out.vehicles.length}、客戶 ${out.customers.length}、車趟 ${out.trips.length}`);
+  }catch(e){toast(errMsg(e))}
+};
+$('#importFile').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const data=JSON.parse(await f.text());let n=0;
+    const ops=[];
+    for(const c of COLLS)for(const row of (data[c]||[])){const{id,...rest}=row;if(id)ops.push([c,id,rest])}
+    for(let i=0;i<ops.length;i+=400){
+      const batch=writeBatch(fs);
+      ops.slice(i,i+400).forEach(([c,id,rest])=>batch.set(fsDoc(fs,c,id),rest));
+      await batch.commit();n+=Math.min(400,ops.length-i);
+    }
+    toast(`已匯入 ${n} 筆資料（同編號的資料會被覆蓋）`);
+  }catch(err){toast(err instanceof SyntaxError?'檔案格式不對，請選擇匯出的 .json 備份檔':errMsg(err))}
+};
+boot();
+</script>
+</body>
+</html>

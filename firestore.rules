@@ -1,0 +1,25 @@
+rules_version = '2';
+// 誰可以讀寫派車資料：只有下面名單裡的 Google 帳號（Gmail）。
+// 新增或移除人員：修改 allowList()，然後在 Firebase 主控台按「發布」。
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function allowList() {
+      return [
+        "你的帳號@gmail.com",
+        // "同事A@gmail.com",
+        // "同事B@gmail.com",
+      ];
+    }
+
+    function isStaff() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in allowList();
+    }
+
+    match /vehicles/{id}  { allow read, write: if isStaff(); }
+    match /customers/{id} { allow read, write: if isStaff(); }
+    match /trips/{id}     { allow read, write: if isStaff(); }
+  }
+}
