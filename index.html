@@ -244,7 +244,7 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
     </section>
   </div>
 
-  <div id="view-settings" hidden>
+  <div id="view-settings" hidden><section class="panel" id="aclPanel" hidden><div class="panel-h"><h2>權限管理</h2><span class="sub">以 Google Email 管理使用者及各角色可使用的功能</span></div><div style="padding:16px;display:grid;gap:16px"><form id="aclUserForm" style="display:flex;gap:8px;flex-wrap:wrap"><input type="email" id="aclEmail" required placeholder="Google Email" style="flex:2;min-width:200px"><select id="aclUserRole"></select><button class="btn primary">新增／更新使用者</button></form><div class="tbl-wrap"><table id="aclUsers"></table></div><form id="aclRoleForm" style="display:flex;gap:8px;flex-wrap:wrap"><input id="aclNewRole" required maxlength="30" placeholder="新角色名稱"><button class="btn">新增角色</button></form><div id="aclRoles" style="display:grid;gap:12px"></div></div></section>
     <section class="panel">
       <div class="panel-h"><h2>車趟類型</h2><span class="sub">新增、改名、換顏色或調整順序；停用後不會出現在新增選單，舊資料照常顯示</span><span class="spacer"></span><button class="btn primary" id="addType">＋ 新增類型</button></div>
       <div class="tbl-wrap"><table id="typeTbl"></table></div>
@@ -423,7 +423,7 @@ const parseYmd=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d
 const shift=(s,n)=>{const d=parseYmd(s);d.setDate(d.getDate()+n);return ymd(d)};
 const mins=t=>{if(!t)return null;const[h,m]=t.split(':').map(Number);return h*60+m};
 
-const S={tab:'dash',date:ymd(new Date()),vehicles:[],customers:[],trips:[],tripTypes:[],ready:{v:false,c:false,t:false},live:false};
+const S={tab:'dash',date:ymd(new Date()),vehicles:[],customers:[],trips:[],tripTypes:[],ready:{v:false,c:false,t:false},live:false,aclUsers:[],aclRoles:[],aclReady:false,aclEmail:''};
 let db=null,unsubTrips=null;
 
 try{const t=localStorage.getItem('dispatch.tab');if(t)S.tab=t}catch(e){}
@@ -440,11 +440,13 @@ function errMsg(e){
 /* ---------- data ---------- */
 async function save(coll,id,data){
   if(!S.live){toast('資料庫未連線，無法儲存');return false}
+  if(!can(({trips:'editTrips',customers:'editCustomers',vehicles:'editVehicles',tripTypes:'settings',accessUsers:'manage',accessRoles:'manage'})[coll]||'manage')){toast('沒有操作權限');return false}
   try{const ref=id?db.collection(coll).doc(id):db.collection(coll).doc();await ref.set(data);return ref.id}
   catch(e){toast(errMsg(e));return false}
 }
 async function remove(coll,id){
   if(!S.live)return false;
+  if(!can(({trips:'deleteTrips',customers:'editCustomers',vehicles:'editVehicles',tripTypes:'settings',accessUsers:'manage',accessRoles:'manage'})[coll]||'manage'))return false;
   try{await db.collection(coll).doc(id).delete();return true}catch(e){toast(errMsg(e));return false}
 }
 const vehById=id=>S.vehicles.find(v=>v.id===id);
@@ -475,10 +477,13 @@ function render(){
   const anySample=[...S.vehicles,...S.customers,...S.trips].some(x=>x.sample);
   $('#clearSample').hidden=!(S.live&&anySample);
   if(S.tab==='dash')renderDash();
+  if(S.aclReady){$('#addTrip').hidden=!can('editTrips');$('#addCust').hidden=!can('editCustomers');$('#addVeh').hidden=!can('editVehicles');$('#addType').hidden=!can('settings');$('#exportBtn').hidden=!can('export');$('#importLbl').hidden=!can('import');$('#copyPrev').hidden=!can('editTrips');}
   if(S.tab==='trips')renderTrips();
   if(S.tab==='customers')renderCust();
   if(S.tab==='vehicles')renderVeh();
-  if(S.tab==='settings')renderTypes();
+  if(S.tab==='settings'){renderTypes();aclRender();}
+  document.querySelectorAll('#tabs button').forEach(b=>{b.hidden=S.aclReady&&!can(b.dataset.tab)});
+  if(S.aclReady&&!can(S.tab)){S.tab=can('dash')?'dash':can('trips')?'trips':'settings';}
 }
 
 function typePill(t){return `<span class="pill tt" style="${tc(t)}">${esc(typeLabel(t))}</span>`}
@@ -724,15 +729,59 @@ $('#typeForm').addEventListener('submit',async e=>{
   if(await save('tripTypes',editingType?.id,data)){$('#typeDlg').close();toast('已儲存類型')}
 });
 
+
+/* Role permissions. The Firestore rules enforce server-side access independently. */
+const PERMS={dash:'儀表板',trips:'車趟清單',customers:'客戶資料',vehicles:'車輛資料',settings:'車趟類型設定',editTrips:'新增／修改車趟',deleteTrips:'刪除車趟',editCustomers:'編輯客戶',editVehicles:'編輯車輛',export:'匯出備份',import:'匯入備份',manage:'權限管理'};
+const DEFAULT_ROLES=[{id:'admin',name:'系統管理員',permissions:Object.keys(PERMS)},{id:'leader',name:'組長',permissions:Object.keys(PERMS)},{id:'member',name:'組員',permissions:['dash','trips','customers','vehicles','editTrips']}];
+const role=id=>S.aclRoles.find(r=>r.id===id)||DEFAULT_ROLES.find(r=>r.id===id);
+const myRole=()=>S.aclUsers.find(u=>u.id===S.aclEmail)?.role||(S.aclEmail==='syujan27@gmail.com'?'admin':null);
+const can=p=>myRole()==='admin'||!!role(myRole())?.permissions?.includes(p);
+const isManager=()=>['admin','leader'].includes(myRole())&&can('manage');
+function aclRender(){
+ $('#aclPanel').hidden=!isManager();if(!isManager())return;
+ const admin=myRole()==='admin';
+ const roles=[...DEFAULT_ROLES.filter(r=>!S.aclRoles.some(x=>x.id===r.id)),...S.aclRoles];
+ $('#aclUserRole').innerHTML=roles.filter(r=>admin||r.id!=='admin').map(r=>'<option value="'+esc(r.id)+'">'+esc(r.name)+'</option>').join('');
+ $('#aclUsers').innerHTML='<thead><tr><th>Email</th><th>角色</th><th>操作</th></tr></thead><tbody>'+S.aclUsers.map(u=>'<tr><td>'+esc(u.id)+'</td><td>'+esc(role(u.role)?.name||u.role)+'</td><td><button class="btn sm danger" data-acl-remove="'+esc(u.id)+'" '+((u.id==='syujan27@gmail.com'||(!admin&&u.role==='admin'))?'disabled':'')+'>移除</button></td></tr>').join('')+'</tbody>';
+ $('#aclRoles').innerHTML=roles.map(r=>'<section class="panel" style="padding:12px"><strong>'+esc(r.name)+'</strong><div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px">'+Object.entries(PERMS).map(([p,label])=>'<label class="chk" style="display:flex"><input type="checkbox" data-acl-role="'+esc(r.id)+'" data-acl-perm="'+p+'" '+((r.id==='admin'||r.permissions?.includes(p))?'checked':'')+' '+((!admin||r.id==='admin'||(p==='manage'&&r.id==='leader'))?'disabled':'')+'>'+label+'</label>').join('')+'</div></section>').join('');
+}
+$('#aclUserForm').addEventListener('submit',async e=>{
+ e.preventDefault();if(!isManager())return;
+ const email=$('#aclEmail').value.trim().toLowerCase(),r=$('#aclUserRole').value;
+ if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return toast('Email 格式不正確');
+ if(r==='admin'&&myRole()!=='admin')return toast('只有管理員能指定系統管理員');
+ if(email==='syujan27@gmail.com'&&r!=='admin')return toast('不可變更初始管理員');
+ const existing=S.aclUsers.find(x=>x.id===email);if(existing?.role==='admin'&&myRole()!=='admin')return toast('不可修改管理員');
+ if(await save('accessUsers',email,{role:r})){$('#aclEmail').value='';toast('帳號已儲存')}
+});
+$('#aclRoleForm').addEventListener('submit',async e=>{
+ e.preventDefault();if(myRole()!=='admin')return toast('僅系統管理員可新增角色');
+ const name=$('#aclNewRole').value.trim();if(!name)return;
+ const id='custom_'+crypto.randomUUID().replace(/-/g,'').slice(0,18);
+ if(await save('accessRoles',id,{name,permissions:['dash']})){$('#aclNewRole').value='';toast('角色已新增')}
+});
+document.addEventListener('change',async e=>{
+ const el=e.target;if(!el.matches('[data-acl-role]')||myRole()!=='admin')return;
+ const id=el.dataset.aclRole,p=el.dataset.aclPerm,r=role(id);if(!r||id==='admin'||(id==='leader'&&p==='manage'))return;
+ const permissions=Object.keys(PERMS).filter(k=>k===p?el.checked:r.permissions?.includes(k));
+ if(await save('accessRoles',id,{name:r.name,permissions}))toast('權限已更新');
+});
+document.addEventListener('click',async e=>{
+ const b=e.target.closest('[data-acl-remove]');if(!b||!isManager())return;
+ const email=b.dataset.aclRemove,u=S.aclUsers.find(x=>x.id===email);
+ if(!u||email==='syujan27@gmail.com'||(!['admin','leader'].includes(myRole()))||(u.role==='admin'&&myRole()!=='admin'))return;
+ if(confirm('確定移除 '+email+'？')&&await remove('accessUsers',email))toast('已移除使用者');
+});
+
 /* ---------- events ---------- */
 document.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.tab){S.tab=b.dataset.tab;try{localStorage.setItem('dispatch.tab',S.tab)}catch(_){ }render();return}
+  if(b.dataset.tab){if(S.aclReady&&!can(b.dataset.tab))return;S.tab=b.dataset.tab;try{localStorage.setItem('dispatch.tab',S.tab)}catch(_){ }render();return}
   if(b.dataset.edit){const t=S.trips.find(x=>x.id===b.dataset.edit);if(t)openTrip(t);return}
   if(b.dataset.cust){openCust(custById(b.dataset.cust));return}
   if(b.dataset.veh){openVeh(vehById(b.dataset.veh));return}
   if(b.dataset.type){openType(typeOf(b.dataset.type));return}
-  if(b.dataset.assign){
+  if(b.dataset.assign){if(!can('editTrips'))return;
     const id=b.dataset.assign;const sel=document.querySelector(`[data-assign-sel="${CSS.escape(id)}"]`);
     if(!sel.value){toast('請先選擇車輛');return}
     const t=S.trips.find(x=>x.id===id);const{id:_,...rest}=t;
@@ -749,7 +798,7 @@ $('#datePick').onchange=e=>{if(e.target.value)setDate(e.target.value)};
 $('#addTrip').onclick=()=>openTrip(null);
 $('#addCust').onclick=()=>openCust(null);
 $('#addVeh').onclick=()=>openVeh(null);
-$('#copyPrev').onclick=async()=>{
+$('#copyPrev').onclick=async()=>{if(!can('editTrips'))return;
   if(!S.live){toast('資料庫未連線');return}
   const prev=shift(S.date,-1);
   try{
@@ -763,7 +812,7 @@ $('#copyPrev').onclick=async()=>{
   }catch(e){toast(errMsg(e))}
 };
 let clearArmed=false;
-$('#clearSample').onclick=async()=>{
+$('#clearSample').onclick=async()=>{if(myRole()!=='admin')return;
   const b=$('#clearSample');
   if(!clearArmed){clearArmed=true;b.textContent='再按一次，刪除所有範例資料';b.classList.add('danger');setTimeout(()=>{clearArmed=false;b.textContent='清除範例資料';b.classList.remove('danger')},4000);return}
   clearArmed=false;b.textContent='清除中…';
@@ -799,15 +848,18 @@ function boot(){
   onAuthStateChanged(auth,user=>{
     stopAll();
     if(!user){
-      db=null;S.live=false;S.vehicles=[];S.customers=[];S.trips=[];S.tripTypes=[];S.ready={v:false,c:false,t:false};
+      db=null;S.live=false;S.vehicles=[];S.customers=[];S.trips=[];S.tripTypes=[];S.aclUsers=[];S.aclRoles=[];S.aclEmail='';S.aclReady=false;S.ready={v:false,c:false,t:false};
       $('#login').hidden=false;['exportBtn','importLbl','logoutBtn'].forEach(id=>$('#'+id).hidden=true);
       $('#whoami').textContent='';$('#syncState').textContent='尚未登入';render();return;
     }
     $('#login').hidden=true;
+    S.aclEmail=(user.email||'').toLowerCase();S.aclReady=false;
     db=makeDb();S.live=true;
     $('#whoami').textContent='· '+(user.email||'');
     ['exportBtn','importLbl','logoutBtn'].forEach(id=>$('#'+id).hidden=false);
     $('#syncState').textContent='已連線 · 資料即時同步';
+    unsubs.push(db.collection('accessUsers').onSnapshot(s=>{S.aclUsers=s.docs.map(d=>({id:d.id,...d.data()}));S.aclReady=true;render()},onDbErr));
+    unsubs.push(db.collection('accessRoles').onSnapshot(s=>{S.aclRoles=s.docs.map(d=>({id:d.id,...d.data()}));render()},onDbErr));
     unsubs.push(db.collection('vehicles').onSnapshot(s=>{S.vehicles=s.docs.map(d=>({id:d.id,...d.data()}));S.ready.v=true;render()},onDbErr));
     unsubs.push(db.collection('customers').onSnapshot(s=>{S.customers=s.docs.map(d=>({id:d.id,...d.data()}));S.ready.c=true;render()},onDbErr));
     unsubs.push(db.collection('tripTypes').onSnapshot(async s=>{
@@ -828,7 +880,7 @@ $('#logoutBtn').onclick=()=>signOut(auth);
 
 /* ---------- backup ---------- */
 const COLLS=['tripTypes','vehicles','customers','trips'];
-$('#exportBtn').onclick=async()=>{
+$('#exportBtn').onclick=async()=>{if(!can('export'))return;
   try{
     const out={app:'north-coast-dispatch',version:1,exportedAt:new Date().toISOString()};
     for(const c of COLLS){const snap=await getDocs(fsCollection(fs,c));out[c]=snap.docs.map(d=>({id:d.id,...d.data()}))}
@@ -838,7 +890,7 @@ $('#exportBtn').onclick=async()=>{
     toast(`已匯出：車輛 ${out.vehicles.length}、客戶 ${out.customers.length}、車趟 ${out.trips.length}`);
   }catch(e){toast(errMsg(e))}
 };
-$('#importFile').onchange=async e=>{
+$('#importFile').onchange=async e=>{if(!can('import'))return;
   const f=e.target.files[0];e.target.value='';if(!f)return;
   try{
     const data=JSON.parse(await f.text());let n=0;
