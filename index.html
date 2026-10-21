@@ -730,13 +730,25 @@ $('#typeForm').addEventListener('submit',async e=>{
 });
 
 
-/* Role permissions. The Firestore rules enforce server-side access independently. */
+/* ================= 權限管理（維護說明） =================
+ * 1. DEFAULT_ROLES：首次使用時的預設角色與可用功能。
+ * 2. PERMS：所有可勾選的權限項目，新增功能時也要同步修改 Firestore 規則。
+ * 3. accessUsers：以小寫 Google Email 當文件 ID，記錄使用者的 role。
+ * 4. accessRoles：自訂角色的名稱與 permissions 陣列。
+ * 5. aclRender()：負責「設定 → 權限管理」畫面。
+ * 6. can()：前端按鈕顯示及操作提示；真正資料安全由 firestore.rules 控制。
+ * 注意：修改此處不會自動更新 Firebase 規則；GitHub Pages 只部署網頁。
+ * ===================================================== */
+// 權限代碼與畫面顯示名稱的對照表；代碼需與 firestore.rules 一致。
 const PERMS={dash:'儀表板',trips:'車趟清單',customers:'客戶資料',vehicles:'車輛資料',settings:'車趟類型設定',editTrips:'新增／修改車趟',deleteTrips:'刪除車趟',editCustomers:'編輯客戶',editVehicles:'編輯車輛',export:'匯出備份',import:'匯入備份',manage:'權限管理'};
+// 三種內建角色。管理員有全部權限；組員預設可看資料及修改車趟。
 const DEFAULT_ROLES=[{id:'admin',name:'系統管理員',permissions:Object.keys(PERMS)},{id:'leader',name:'組長',permissions:Object.keys(PERMS)},{id:'member',name:'組員',permissions:['dash','trips','customers','vehicles','editTrips']}];
 const role=id=>S.aclRoles.find(r=>r.id===id)||DEFAULT_ROLES.find(r=>r.id===id);
+// 目前登入者的角色；初始管理員信箱僅作為啟用階段的保護機制。
 const myRole=()=>S.aclUsers.find(u=>u.id===S.aclEmail)?.role||(S.aclEmail==='syujan27@gmail.com'?'admin':null);
 const can=p=>myRole()==='admin'||!!role(myRole())?.permissions?.includes(p);
 const isManager=()=>['admin','leader'].includes(myRole())&&can('manage');
+// 重繪帳號清單、角色清單及權限勾選框。
 function aclRender(){
  $('#aclPanel').hidden=!isManager();if(!isManager())return;
  const admin=myRole()==='admin';
@@ -745,6 +757,7 @@ function aclRender(){
  $('#aclUsers').innerHTML='<thead><tr><th>Email</th><th>角色</th><th>操作</th></tr></thead><tbody>'+S.aclUsers.map(u=>'<tr><td>'+esc(u.id)+'</td><td>'+esc(role(u.role)?.name||u.role)+'</td><td><button class="btn sm danger" data-acl-remove="'+esc(u.id)+'" '+((u.id==='syujan27@gmail.com'||(!admin&&u.role==='admin'))?'disabled':'')+'>移除</button></td></tr>').join('')+'</tbody>';
  $('#aclRoles').innerHTML=roles.map(r=>'<section class="panel" style="padding:12px"><strong>'+esc(r.name)+'</strong><div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px">'+Object.entries(PERMS).map(([p,label])=>'<label class="chk" style="display:flex"><input type="checkbox" data-acl-role="'+esc(r.id)+'" data-acl-perm="'+p+'" '+((r.id==='admin'||r.permissions?.includes(p))?'checked':'')+' '+((!admin||r.id==='admin'||(p==='manage'&&r.id==='leader'))?'disabled':'')+'>'+label+'</label>').join('')+'</div></section>').join('');
 }
+// 新增或變更 Email 對應角色；不會建立 Google 帳號本身。
 $('#aclUserForm').addEventListener('submit',async e=>{
  e.preventDefault();if(!isManager())return;
  const email=$('#aclEmail').value.trim().toLowerCase(),r=$('#aclUserRole').value;
@@ -754,12 +767,14 @@ $('#aclUserForm').addEventListener('submit',async e=>{
  const existing=S.aclUsers.find(x=>x.id===email);if(existing?.role==='admin'&&myRole()!=='admin')return toast('不可修改管理員');
  if(await save('accessUsers',email,{role:r})){$('#aclEmail').value='';toast('帳號已儲存')}
 });
+// 新增自訂角色，預設只開放儀表板。
 $('#aclRoleForm').addEventListener('submit',async e=>{
  e.preventDefault();if(myRole()!=='admin')return toast('僅系統管理員可新增角色');
  const name=$('#aclNewRole').value.trim();if(!name)return;
  const id='custom_'+crypto.randomUUID().replace(/-/g,'').slice(0,18);
  if(await save('accessRoles',id,{name,permissions:['dash']})){$('#aclNewRole').value='';toast('角色已新增')}
 });
+// 修改角色的功能權限（內建管理員權限不可調降）。
 document.addEventListener('change',async e=>{
  const el=e.target;if(!el.matches('[data-acl-role]')||myRole()!=='admin')return;
  const id=el.dataset.aclRole,p=el.dataset.aclPerm,r=role(id);if(!r||id==='admin'||(id==='leader'&&p==='manage'))return;
