@@ -167,6 +167,12 @@ dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 34px)}
 .toast.show{opacity:1}
 footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* 權限頁：沿用原介面的海洋色系、表格與圓角，窄螢幕將編輯區移到清單上方。 */
+.acl-tabs{display:flex;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.acl-tabs [aria-selected=true]{background:var(--surface-2);border-color:var(--ocean);color:var(--ocean)}
+.acl-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px}.acl-main{min-width:0;padding:16px}.acl-main .stats{margin-bottom:14px}.acl-main table{min-width:560px}.acl-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.acl-filters input{flex:1;min-width:180px}.acl-filters input,input[type=email]{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}.acl-editor{border-left:1px solid var(--line);padding:16px;background:var(--surface)}.acl-editor-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}.acl-editor h3{margin:0;font-family:var(--f-display);font-size:17px}.acl-editor form{display:flex;flex-direction:column;gap:16px}.acl-editor label{display:flex;flex-direction:column;gap:7px;font-size:13px}.acl-help{font-size:12px;line-height:1.8;margin:0}.acl-summary{font-size:12px;padding:12px;background:var(--surface-2);border-radius:8px}.acl-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}.acl-pagination{display:flex;align-items:center;gap:12px;padding-top:16px;font-size:12px}.acl-perm-group{margin:0 0 14px;padding:12px;border:1px solid var(--line);border-radius:8px}.acl-perm-group legend{color:var(--muted);font-size:12px}.acl-perm-group label{flex-direction:row;align-items:center;margin:8px 0}.acl-selected{background:var(--surface-2)}.acl-email{overflow-wrap:anywhere}.acl-layout:has(.acl-editor[hidden]){grid-template-columns:1fr}
+@media(max-width:900px){.acl-layout{grid-template-columns:1fr}.acl-editor{border-left:0;border-bottom:1px solid var(--line);grid-row:1}.acl-main .stat{padding:10px}.acl-editor form{max-width:600px}.acl-main table{min-width:520px}}
 </style>
 </head>
 <body>
@@ -244,7 +250,15 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
     </section>
   </div>
 
-  <div id="view-settings" hidden><section class="panel" id="aclPanel" hidden><div class="panel-h"><h2>權限管理</h2><span class="sub">以 Google Email 管理使用者及各角色可使用的功能</span></div><div style="padding:16px;display:grid;gap:16px"><form id="aclUserForm" style="display:flex;gap:8px;flex-wrap:wrap"><input type="email" id="aclEmail" required placeholder="Google Email" style="flex:2;min-width:200px"><select id="aclUserRole"></select><button class="btn primary">新增／更新使用者</button></form><div class="tbl-wrap"><table id="aclUsers"></table></div><form id="aclRoleForm" style="display:flex;gap:8px;flex-wrap:wrap"><input id="aclNewRole" required maxlength="30" placeholder="新角色名稱"><button class="btn">新增角色</button></form><div id="aclRoles" style="display:grid;gap:12px"></div></div></section>
+  <div id="view-settings" hidden>
+    <!-- 權限管理沿用全站配色；清單與編輯區分開，輸入內容不隨即時同步重繪。 -->
+    <section class="panel" id="aclPanel" hidden>
+      <div class="panel-h"><div><h2>權限管理</h2><span class="sub">管理 Google 登入帳號，以及各角色可使用的功能</span></div><span class="spacer"></span><button class="btn primary" id="aclAdd">＋ 新增使用者</button></div>
+      <div class="acl-tabs" role="tablist" aria-label="權限管理分類"><button class="btn" data-acl-tab="users" role="tab" aria-selected="true">使用者權限</button><button class="btn ghost" data-acl-tab="roles" role="tab" aria-selected="false">角色管理</button></div>
+      <div class="acl-layout"><div class="acl-main"><div class="stats" id="aclStats"></div><div class="acl-filters"><input type="search" id="aclSearch" placeholder="搜尋 Email 或角色名稱" aria-label="搜尋使用者或角色"><select id="aclFilter" aria-label="篩選角色"></select><span class="muted" id="aclCount" aria-live="polite"></span></div><div class="tbl-wrap"><table id="aclUsers"></table></div><div class="acl-pagination"><span id="aclPageInfo" class="muted"></span><span class="spacer"></span><button class="btn sm" id="aclPrev" aria-label="上一頁">‹</button><span id="aclPage"></span><button class="btn sm" id="aclNext" aria-label="下一頁">›</button></div></div>
+      <aside class="acl-editor" id="aclEditor" hidden><div class="acl-editor-head"><h3 id="aclEditorTitle">新增使用者</h3><button class="btn sm ghost" id="aclClose" aria-label="關閉編輯區">✕</button></div><form id="aclUserForm"><label>Google Email<input type="email" id="aclEmail" required placeholder="name@gmail.com" autocomplete="off"></label><label>角色<select id="aclUserRole"></select></label><p class="muted acl-help">加入後，使用者即可用這個 Google 帳號登入。功能存取範圍依角色設定。</p><div id="aclUserSummary" class="acl-summary"></div><div class="acl-actions"><button type="button" class="btn" id="aclCancel">取消</button><button class="btn primary">儲存變更</button></div></form>
+      <form id="aclRoleForm" hidden><label>角色名稱<input id="aclNewRole" required maxlength="30" placeholder="例如：調度人員"></label><div id="aclRoles"></div><p id="aclRoleHint" class="muted acl-help"></p><div class="acl-actions"><button type="button" class="btn" id="aclRoleCancel">取消</button><button class="btn primary" id="aclRoleSave">儲存變更</button></div></form></aside></div>
+    </section>
     <section class="panel">
       <div class="panel-h"><h2>車趟類型</h2><span class="sub">新增、改名、換顏色或調整順序；停用後不會出現在新增選單，舊資料照常顯示</span><span class="spacer"></span><button class="btn primary" id="addType">＋ 新增類型</button></div>
       <div class="tbl-wrap"><table id="typeTbl"></table></div>
@@ -748,44 +762,75 @@ const role=id=>S.aclRoles.find(r=>r.id===id)||DEFAULT_ROLES.find(r=>r.id===id);
 const myRole=()=>S.aclUsers.find(u=>u.id===S.aclEmail)?.role||(S.aclEmail==='syujan27@gmail.com'?'admin':null);
 const can=p=>myRole()==='admin'||!!role(myRole())?.permissions?.includes(p);
 const isManager=()=>['admin','leader'].includes(myRole())&&can('manage');
-// 重繪帳號清單、角色清單及權限勾選框。
+// 權限頁的篩選與編輯草稿保留在本機；只有送出表單才寫入 Firestore。
+const aclUI={tab:'users',page:1,selected:null,roleId:null,busy:false};
+const aclAllRoles=()=>[...DEFAULT_ROLES.filter(r=>!S.aclRoles.some(x=>x.id===r.id)),...S.aclRoles];
+// 初始管理員即使尚未有 accessUsers 文件也顯示，避免清單漏列。
+const aclAllUsers=()=>S.aclUsers.some(u=>u.id==='syujan27@gmail.com')?S.aclUsers:[{id:'syujan27@gmail.com',role:'admin'},...S.aclUsers];
 function aclRender(){
  $('#aclPanel').hidden=!isManager();if(!isManager())return;
- const admin=myRole()==='admin';
- const roles=[...DEFAULT_ROLES.filter(r=>!S.aclRoles.some(x=>x.id===r.id)),...S.aclRoles];
- $('#aclUserRole').innerHTML=roles.filter(r=>admin||r.id!=='admin').map(r=>'<option value="'+esc(r.id)+'">'+esc(r.name)+'</option>').join('');
- $('#aclUsers').innerHTML='<thead><tr><th>Email</th><th>角色</th><th>操作</th></tr></thead><tbody>'+S.aclUsers.map(u=>'<tr><td>'+esc(u.id)+'</td><td>'+esc(role(u.role)?.name||u.role)+'</td><td><button class="btn sm danger" data-acl-remove="'+esc(u.id)+'" '+((u.id==='syujan27@gmail.com'||(!admin&&u.role==='admin'))?'disabled':'')+'>移除</button></td></tr>').join('')+'</tbody>';
- $('#aclRoles').innerHTML=roles.map(r=>'<section class="panel" style="padding:12px"><strong>'+esc(r.name)+'</strong><div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px">'+Object.entries(PERMS).map(([p,label])=>'<label class="chk" style="display:flex"><input type="checkbox" data-acl-role="'+esc(r.id)+'" data-acl-perm="'+p+'" '+((r.id==='admin'||r.permissions?.includes(p))?'checked':'')+' '+((!admin||r.id==='admin'||(p==='manage'&&r.id==='leader'))?'disabled':'')+'>'+label+'</label>').join('')+'</div></section>').join('');
+ const roles=aclAllRoles(),users=aclAllUsers(),isUsers=aclUI.tab==='users',query=$('#aclSearch').value.trim().toLowerCase(),filter=$('#aclFilter').value;
+ const options='<option value="">全部角色</option>'+roles.map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('');
+ if($('#aclFilter').innerHTML!==options){$('#aclFilter').innerHTML=options;$('#aclFilter').value=filter;}
+ $('#aclFilter').hidden=!isUsers;$('#aclSearch').placeholder=isUsers?'搜尋 Email 或角色名稱':'搜尋角色名稱';
+ $('#aclAdd').textContent=isUsers?'＋ 新增使用者':'＋ 新增角色';$('#aclAdd').hidden=!isUsers&&myRole()!=='admin';
+ document.querySelectorAll('[data-acl-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.aclTab===aclUI.tab)));
+ $('#aclStats').innerHTML=[['使用者總數',users.length],['角色類型',roles.length],['管理人員',users.filter(u=>['admin','leader'].includes(u.role)).length]].map(([k,v])=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+ const list=(isUsers?users:roles).filter(x=>isUsers?(!filter||x.role===filter)&&`${x.id} ${role(x.role)?.name||x.role}`.toLowerCase().includes(query):x.name.toLowerCase().includes(query)).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'zh-TW'));
+ const pages=Math.max(1,Math.ceil(list.length/8));aclUI.page=Math.min(aclUI.page,pages);const start=(aclUI.page-1)*8;
+ $('#aclCount').textContent=`共 ${list.length} 筆`;
+ $('#aclUsers').innerHTML='<thead><tr>'+(isUsers?'<th>Google Email</th><th>角色</th><th>功能範圍</th><th>操作</th>':'<th>角色名稱</th><th>成員數</th><th>開放功能</th><th>操作</th>')+'</tr></thead><tbody>'+list.slice(start,start+8).map(x=>{
+ const r=isUsers?role(x.role):x,locked=isUsers&&(x.id==='syujan27@gmail.com'||(myRole()!=='admin'&&x.role==='admin'));
+ return `<tr class="${aclUI.selected===x.id?'acl-selected':''}"><td class="acl-email">${esc(isUsers?x.id:x.name)}${isUsers&&x.id===S.aclEmail?' <span class="chip">目前帳號</span>':''}</td><td>${isUsers?`<span class="chip big">${esc(r?.name||x.role)}</span>`:users.filter(u=>u.role===x.id).length+' 人'}</td><td>${(r?.id==='admin'?Object.keys(PERMS):r?.permissions||[]).length} 項功能</td><td><div class="row-act"><button class="btn sm" data-acl-edit="${esc(x.id)}">${locked?'檢視':'編輯'}</button>${isUsers&&!locked?`<button class="btn sm danger" data-acl-remove="${esc(x.id)}">移除</button>`:''}</div></td></tr>`;
+ }).join('')+(list.length?'':'<tr><td colspan="4" class="empty">沒有符合條件的資料，請調整搜尋或篩選。</td></tr>')+'</tbody>';
+ $('#aclPageInfo').textContent=list.length?`顯示 ${start+1}–${Math.min(start+8,list.length)} 筆`:'顯示 0 筆';$('#aclPage').textContent=`${aclUI.page} / ${pages}`;$('#aclPrev').disabled=aclUI.page<=1;$('#aclNext').disabled=aclUI.page>=pages;
 }
-// 新增或變更 Email 對應角色；不會建立 Google 帳號本身。
+function aclCloseEditor(){if(aclUI.busy)return;$('#aclEditor').hidden=true;aclUI.selected=null;aclRender();}
+function aclOpen(id=null){
+ aclUI.selected=id;$('#aclEditor').hidden=false;const userMode=aclUI.tab==='users';$('#aclUserForm').hidden=!userMode;$('#aclRoleForm').hidden=userMode;
+ if(userMode){
+ const u=aclAllUsers().find(x=>x.id===id),locked=!!u&&(u.id==='syujan27@gmail.com'||(myRole()!=='admin'&&u.role==='admin'));
+ $('#aclEditorTitle').textContent=u?'使用者權限設定':'新增使用者';$('#aclEmail').value=u?.id||'';$('#aclEmail').readOnly=!!u;
+ $('#aclUserRole').innerHTML=aclAllRoles().filter(r=>myRole()==='admin'||r.id!=='admin'||u?.role==='admin').map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('');$('#aclUserRole').value=u?.role||'member';$('#aclUserRole').disabled=locked;$('#aclUserForm button[type=submit],#aclUserForm button:not([type])').disabled=locked;aclUserSummary();
+ }else{
+ const r=role(id),locked=myRole()!=='admin'||id==='admin';aclUI.roleId=id;$('#aclEditorTitle').textContent=r?'角色權限設定':'新增角色';$('#aclNewRole').value=r?.name||'';$('#aclNewRole').disabled=locked;
+ const groups=[['資料檢視',['dash','trips','customers','vehicles']],['資料維護',['editTrips','deleteTrips','editCustomers','editVehicles','settings']],['管理與備份',['manage','export','import']]];
+ $('#aclRoles').innerHTML=groups.map(([name,perms])=>`<fieldset class="acl-perm-group"><legend>${name}</legend>${perms.map(p=>`<label><input type="checkbox" name="permission" value="${p}" ${(id==='admin'||(r?.permissions||['dash']).includes(p))?'checked':''} ${locked||(p==='manage'&&id==='leader')?'disabled':''}>${PERMS[p]}</label>`).join('')}</fieldset>`).join('');
+ $('#aclRoleSave').hidden=locked;$('#aclRoleHint').textContent=id==='admin'?'系統管理員固定擁有全部功能。':myRole()!=='admin'?'只有系統管理員可以變更角色權限。':'權限管理頁面僅開放系統管理員與組長。儲存後套用至此角色所有成員。';
+ }aclRender();
+}
+function aclUserSummary(){const r=role($('#aclUserRole').value);$('#aclUserSummary').textContent='可使用：'+(r?.id==='admin'?'全部功能':(r?.permissions||[]).map(p=>PERMS[p]).join('、')||'尚未開放功能');}
+$('#aclUserRole').onchange=aclUserSummary;
+$('#aclAdd').onclick=()=>aclOpen();
+['aclClose','aclCancel','aclRoleCancel'].forEach(id=>$('#'+id).onclick=aclCloseEditor);
+$('#aclSearch').oninput=$('#aclFilter').onchange=()=>{aclUI.page=1;aclRender();};
+$('#aclPrev').onclick=()=>{aclUI.page--;aclRender();};$('#aclNext').onclick=()=>{aclUI.page++;aclRender();};
+// 寫入期間鎖住表單，失敗時保留草稿；成功才關閉編輯區。
+async function aclSubmit(form,action){if(aclUI.busy)return;aclUI.busy=true;const buttons=[...form.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);try{if(await action()){aclUI.busy=false;aclCloseEditor();toast('已儲存變更');}}finally{aclUI.busy=false;buttons.forEach(b=>b.disabled=false);}}
 $('#aclUserForm').addEventListener('submit',async e=>{
  e.preventDefault();if(!isManager())return;
- const email=$('#aclEmail').value.trim().toLowerCase(),r=$('#aclUserRole').value;
+ const email=$('#aclEmail').value.trim().toLowerCase(),r=$('#aclUserRole').value,existing=aclAllUsers().find(u=>u.id===email);
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return toast('Email 格式不正確');
- if(r==='admin'&&myRole()!=='admin')return toast('只有管理員能指定系統管理員');
- if(email==='syujan27@gmail.com'&&r!=='admin')return toast('不可變更初始管理員');
- const existing=S.aclUsers.find(x=>x.id===email);if(existing?.role==='admin'&&myRole()!=='admin')return toast('不可修改管理員');
- if(await save('accessUsers',email,{role:r})){$('#aclEmail').value='';toast('帳號已儲存')}
+ if(!role(r))return toast('請選擇有效角色');
+ if(myRole()!=='admin'&&(r==='admin'||existing?.role==='admin'))return toast('不可修改系統管理員');
+ if(email==='syujan27@gmail.com')return toast('不可變更初始管理員');
+ if(!aclUI.selected&&existing)return toast('此 Email 已存在，請從清單選擇編輯');
+ await aclSubmit(e.target,()=>save('accessUsers',email,{role:r}));
 });
-// 新增自訂角色，預設只開放儀表板。
 $('#aclRoleForm').addEventListener('submit',async e=>{
- e.preventDefault();if(myRole()!=='admin')return toast('僅系統管理員可新增角色');
+ e.preventDefault();if(myRole()!=='admin'||aclUI.roleId==='admin')return;
  const name=$('#aclNewRole').value.trim();if(!name)return;
- const id='custom_'+crypto.randomUUID().replace(/-/g,'').slice(0,18);
- if(await save('accessRoles',id,{name,permissions:['dash']})){$('#aclNewRole').value='';toast('角色已新增')}
-});
-// 修改角色的功能權限（內建管理員權限不可調降）。
-document.addEventListener('change',async e=>{
- const el=e.target;if(!el.matches('[data-acl-role]')||myRole()!=='admin')return;
- const id=el.dataset.aclRole,p=el.dataset.aclPerm,r=role(id);if(!r||id==='admin'||(id==='leader'&&p==='manage'))return;
- const permissions=Object.keys(PERMS).filter(k=>k===p?el.checked:r.permissions?.includes(k));
- if(await save('accessRoles',id,{name:r.name,permissions}))toast('權限已更新');
+ if(aclAllRoles().some(r=>r.name===name&&r.id!==aclUI.roleId))return toast('已有同名角色');
+ const id=aclUI.roleId||'custom_'+crypto.randomUUID().replace(/-/g,'').slice(0,18),permissions=[...$('#aclRoles').querySelectorAll('input:checked')].map(x=>x.value);
+ await aclSubmit(e.target,()=>save('accessRoles',id,{name,permissions}));
 });
 document.addEventListener('click',async e=>{
+ const tab=e.target.closest('[data-acl-tab]');if(tab){if(aclUI.busy)return;aclUI.tab=tab.dataset.aclTab;aclUI.page=1;$('#aclSearch').value='';$('#aclFilter').value='';aclCloseEditor();return;}
+ const edit=e.target.closest('[data-acl-edit]');if(edit){if(!aclUI.busy)aclOpen(edit.dataset.aclEdit);return;}
  const b=e.target.closest('[data-acl-remove]');if(!b||!isManager())return;
- const email=b.dataset.aclRemove,u=S.aclUsers.find(x=>x.id===email);
- if(!u||email==='syujan27@gmail.com'||(!['admin','leader'].includes(myRole()))||(u.role==='admin'&&myRole()!=='admin'))return;
- if(confirm('確定移除 '+email+'？')&&await remove('accessUsers',email))toast('已移除使用者');
+ const email=b.dataset.aclRemove,u=aclAllUsers().find(x=>x.id===email);
+ if(!u||email==='syujan27@gmail.com'||(u.role==='admin'&&myRole()!=='admin'))return;
+ if(confirm('確定移除 '+email+' 的登入權限？')&&await remove('accessUsers',email)){if(aclUI.selected===email)aclCloseEditor();toast('已移除使用者');}
 });
 
 /* ---------- events ---------- */
@@ -923,3 +968,4 @@ boot();
 </script>
 </body>
 </html>
+
