@@ -1,8 +1,10 @@
 rules_version = '2';
-// 每日派車管理系統：資料庫權限規則
+// 派車管理系統：資料庫權限規則
 // 1. 把 ownerList() 裡的信箱換成你自己的 Gmail（全部小寫）。
-//    名單裡的人是「最高管理員」，一定能登入、擁有全部權限。
-// 2. 其他同事不用寫在這裡，請在系統的「權限管理」頁新增。
+//    名單裡的人是「最高管理員」，用 Google 登入一定能進入、擁有全部權限。
+// 2. 其他人員（Google 或帳號密碼）都在系統的「權限管理」頁新增。
+// 3. 帳號密碼登入的帳號在 Firebase 裡長得像 dispatch@nbbus-683cc.firebaseapp.com（不是真的信箱）。
+//    下面的 ACCOUNT_DOMAIN 要和 firebase-config.js 的 authDomain 一致。
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -11,10 +13,17 @@ service cloud.firestore {
         "你的帳號@gmail.com",
       ];
     }
+    function accountDomainPattern() { return '.*@nbbus-683cc[.]firebaseapp[.]com$'; }
 
-    function signedIn() { return request.auth != null && request.auth.token.email_verified == true; }
+    function provider() { return request.auth.token.firebase.sign_in_provider; }
+    function signedIn() {
+      return request.auth != null && (
+        (provider() == 'google.com' && request.auth.token.email_verified == true) ||
+        (provider() == 'password' && request.auth.token.email.lower().matches(accountDomainPattern()))
+      );
+    }
     function myEmail() { return request.auth.token.email.lower(); }
-    function isOwner() { return signedIn() && myEmail() in ownerList(); }
+    function isOwner() { return signedIn() && provider() == 'google.com' && myEmail() in ownerList(); }
     function memberPath() { return /databases/$(database)/documents/members/$(myEmail()); }
     function me() { return get(memberPath()).data; }
     function isMember() { return isOwner() || (signedIn() && exists(memberPath()) && me().active == true); }

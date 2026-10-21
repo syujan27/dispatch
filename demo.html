@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>每日派車管理系統（展示版）</title>
+<title>派車管理系統（展示版）</title>
 <style>body{margin:0}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Iansui&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
@@ -139,6 +139,13 @@ body.nav-collapsed .collapse-btn svg{transform:rotate(180deg)}
 .rp-sum .chip{font-size:12px;padding:2px 9px}
 table.rp td,table.rp th{white-space:nowrap}
 table.rp td.wrap{white-space:normal;min-width:160px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;width:max-content;max-width:100%}
+.seg button{background:var(--surface);border:0;padding:7px 14px;cursor:pointer;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:color-mix(in srgb,var(--ocean) 14%,var(--surface));color:var(--ocean);font-weight:600}
+.btn{white-space:nowrap}
+#memberTbl td{white-space:nowrap}
+#memberTbl .mods{min-width:240px}
 .gate{padding:60px 16px;text-align:center;color:var(--muted)}
 
 .banner{margin-top:14px;padding:10px 14px;border-radius:10px;background:var(--sand);font-size:13px}
@@ -258,7 +265,7 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
 <header class="top">
   <div class="wrap">
     <div class="brand">
-      <h1>每日派車管理系統</h1>
+      <h1>派車管理系統</h1>
       <p><span class="en">DAILY DISPATCH<span class="dot"> · </span></span><span>北海之真情 · · 與您共享旅遊的歡愉</span></p>
       <div class="gulls" aria-hidden="true"><span class="g1"><svg viewBox="0 0 64 26" aria-hidden="true"><path class="g-w" d="M2 13 C10 4 21 2 29 11 L32 14 L35 11 C43 2 54 4 62 13 C52 8 43 9 36 16 L32 19 L28 16 C21 9 12 8 2 13Z"/><path class="g-t" d="M2 13 C5 10 8 8.5 11 8 C9 9.5 7.5 10.5 6 12 Z M62 13 C59 10 56 8.5 53 8 C55 9.5 56.5 10.5 58 12 Z"/></svg></span><span class="g2"><svg viewBox="0 0 64 26" aria-hidden="true"><path class="g-w" d="M2 13 C10 4 21 2 29 11 L32 14 L35 11 C43 2 54 4 62 13 C52 8 43 9 36 16 L32 19 L28 16 C21 9 12 8 2 13Z"/><path class="g-t" d="M2 13 C5 10 8 8.5 11 8 C9 9.5 7.5 10.5 6 12 Z M62 13 C59 10 56 8.5 53 8 C55 9.5 56.5 10.5 58 12 Z"/></svg></span><span class="g3"><svg viewBox="0 0 64 26" aria-hidden="true"><path class="g-w" d="M2 13 C10 4 21 2 29 11 L32 14 L35 11 C43 2 54 4 62 13 C52 8 43 9 36 16 L32 19 L28 16 C21 9 12 8 2 13Z"/><path class="g-t" d="M2 13 C5 10 8 8.5 11 8 C9 9.5 7.5 10.5 6 12 Z M62 13 C59 10 56 8.5 53 8 C55 9.5 56.5 10.5 58 12 Z"/></svg></span></div>
     </div>
@@ -283,6 +290,7 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
         </button>
         <div class="user-menu" id="userMenu" hidden>
           <div class="um-name" id="userMenuName"></div><div class="um-email" id="userEmail"></div>
+          <button class="um-item" id="userPw" hidden>修改密碼</button>
           <button class="um-item" id="userLogout">登出</button>
         </div>
       </div>
@@ -363,7 +371,7 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
 
   <div id="view-members" hidden>
     <section class="panel">
-      <div class="panel-h"><h2>人員與權限</h2><span class="sub">名單內的 Gmail 才能登入；能看到哪些功能由「角色」決定</span><span class="spacer"></span><button class="btn primary" id="addMember">＋ 新增人員</button></div>
+      <div class="panel-h"><h2>人員與權限</h2><span class="sub">名單內的帳號或 Gmail 才能登入；能看到哪些功能由「角色」決定</span><span class="spacer"></span><button class="btn primary" id="addMember">＋ 新增人員</button></div>
       <div class="tbl-wrap"><table id="memberTbl"></table></div>
     </section>
   </div>
@@ -471,7 +479,12 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
   <form method="dialog" id="memberForm">
     <div class="dlg-h" id="memberDlgTitle">新增人員</div>
     <div class="dlg-b">
-      <label class="full">Gmail<input type="text" id="mf-email" required placeholder="name@gmail.com" autocomplete="off" inputmode="email"></label>
+      <div class="full seg" id="mf-kind" role="radiogroup" aria-label="登入方式">
+        <button type="button" data-kind="pw" aria-pressed="true">帳號密碼</button><button type="button" data-kind="google" aria-pressed="false">Google（Gmail）</button>
+      </div>
+      <label class="full" id="mf-email-l">Gmail<input type="text" id="mf-email" placeholder="name@gmail.com" autocomplete="off" inputmode="email"></label>
+      <label id="mf-user-l">帳號<input type="text" id="mf-user" placeholder="英文或數字，例：dispatch" autocomplete="off" autocapitalize="none" spellcheck="false"></label>
+      <label id="mf-pass-l">密碼（至少 6 碼）<input type="text" id="mf-pass" autocomplete="new-password" spellcheck="false"></label>
       <label class="full">姓名<input type="text" id="mf-name" placeholder="例：王小明"></label>
       <label>角色<select id="mf-role"></select></label>
       <label>群組<select id="mf-group"></select></label>
@@ -484,6 +497,21 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
       <button type="button" class="btn ghost" data-close>取消</button>
       <button type="submit" class="btn primary">儲存</button>
     </div>
+  </form>
+</dialog>
+
+<!-- Change password dialog -->
+<dialog id="pwDlg">
+  <form method="dialog" id="pwChgForm">
+    <div class="dlg-h">修改密碼</div>
+    <div class="dlg-b">
+      <input type="text" autocomplete="username" id="pc-user" hidden>
+      <label class="full">目前密碼<input type="password" id="pc-old" autocomplete="current-password" required></label>
+      <label class="full">新密碼（至少 6 碼）<input type="password" id="pc-new" autocomplete="new-password" required></label>
+      <label class="full">再輸入一次新密碼<input type="password" id="pc-new2" autocomplete="new-password" required></label>
+      <div class="warnline" id="pc-warn"></div>
+    </div>
+    <div class="dlg-f"><span class="spacer"></span><button type="button" class="btn ghost" data-close>取消</button><button type="submit" class="btn primary">更新密碼</button></div>
   </form>
 </dialog>
 
@@ -551,9 +579,15 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
 <!-- Login gate -->
 <div id="login" class="login" hidden>
   <div class="login-card">
-    <h2>每日派車管理系統</h2>
-    <p id="loginMsg">請用已加入名單的 Google 帳號（Gmail）登入。</p>
-    <button class="btn primary" id="loginBtn">使用 Google 帳號登入</button>
+    <h2>派車管理系統</h2>
+    <p id="loginMsg">請用帳號密碼，或已加入名單的 Google 帳號登入。</p>
+    <form id="pwForm" class="pw-form" autocomplete="on">
+      <label>帳號<input type="text" id="lg-user" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+      <label>密碼<input type="password" id="lg-pass" name="password" autocomplete="current-password" required></label>
+      <button type="submit" class="btn primary" id="pwBtn">登入</button>
+    </form>
+    <div class="or"><span>或</span></div>
+    <button class="btn" id="loginBtn"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="vertical-align:-3px;margin-right:6px"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.5 5.5 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9h-4v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.4 14.4a7.2 7.2 0 0 1 0-4.7V6.6h-4a12 12 0 0 0 0 10.8z"/><path fill="#EA4335" d="M12 4.8c1.7 0 3.3.6 4.5 1.8l3.4-3.4A12 12 0 0 0 1.4 6.6l4 3.1c.9-2.8 3.5-4.9 6.6-4.9z"/></svg>使用 Google 帳號登入</button>
   </div>
 </div>
 <style>
@@ -561,17 +595,167 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
 .login-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px 26px;max-width:380px;width:100%;text-align:center}
 .login-card h2{font-family:var(--f-display);margin:0 0 6px;letter-spacing:.06em}
 .login-card p{color:var(--muted);margin:0 0 18px}
+.pw-form{display:flex;flex-direction:column;gap:10px;text-align:left}
+.pw-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.pw-form input{font-size:15px;color:var(--ink);padding:9px 11px}
+.pw-form .btn{padding:9px 12px;margin-top:4px}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;margin:16px 0}
+.or::before,.or::after{content:"";flex:1;border-top:1px solid var(--line)}
+#loginBtn{width:100%;padding:9px 12px}
 label.btn{display:inline-block}
 </style>
 
 <script type="module">
 /* Firebase SDK (pinned version). Your project settings live in firebase-config.js */
-import { initializeApp, getFirestore, collection as fsCollection, doc as fsDoc, query as fsQuery, where as fsWhere,
-  onSnapshot as fsOnSnapshot, getDocs, getDoc, setDoc, deleteDoc, writeBatch,
-  getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "./demo-firebase.js";
-const firebaseConfig = {};
+/* 展示版：內建的假 Firebase（資料只在記憶體，重新整理就還原） */
+const __fb=(()=>{
+// 展示版用的「假 Firebase」：資料只存在瀏覽器記憶體裡，重新整理就還原。
+// demo.html 會用這個檔案取代真正的 Firebase，所以不需要登入，也不會碰到正式資料。
+
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const DEMO_EMAIL = 'demo@example.com';
+
+function buildSeed() {
+  const s = {
+    roles: {
+      admin: { name: '系統管理員', order: 1, canManage: true, modules: ['dash', 'trips', 'customers', 'vehicles', 'tripTypes', 'monthly'], locked: true },
+      manager: { name: '經理', order: 2, canManage: true, modules: ['dash', 'trips', 'customers', 'vehicles', 'tripTypes', 'monthly'] },
+      assistant: { name: '特助', order: 3, canManage: false, modules: ['dash', 'trips', 'customers', 'vehicles', 'tripTypes', 'monthly'] },
+      leader: { name: '組長', order: 4, canManage: false, modules: ['dash', 'trips', 'customers', 'vehicles'] },
+      staff: { name: '組員', order: 5, canManage: false, modules: ['dash', 'trips'] },
+    },
+    groups: {
+      g1: { name: '調度組', order: 1, note: '每日派車' },
+      g2: { name: '業務組', order: 2, note: '客戶聯繫與報價' },
+    },
+    members: {
+      [DEMO_EMAIL]: { email: DEMO_EMAIL, name: '展示帳號', roleId: 'admin', groupId: 'g1', active: true },
+      'leader@example.com': { email: 'leader@example.com', name: '範例組長', roleId: 'leader', groupId: 'g1', active: true },
+      'staff@example.com': { email: 'staff@example.com', name: '範例組員', roleId: 'staff', groupId: 'g2', active: true },
+    },
+    tripTypes: {
+      school: { label: '學校校車', color: '#2c6fb0', order: 1, active: true },
+      cram: { label: '學校補習班', color: '#178a7a', order: 2, active: true },
+      tour: { label: '旅遊團', color: '#c97b1e', order: 3, active: true },
+      pilgrim: { label: '進香團', color: '#b0433a', order: 4, active: true },
+    },
+    vehicles: {
+      v1: { plate: 'DEMO-101', type: '大車', seats: 43, status: '可派', driver: '範例司機甲', phone: '0900-000-001', mfgDate: '2018-04-12', note: '' },
+      v2: { plate: 'DEMO-102', type: '大車', seats: 43, status: '可派', driver: '範例司機乙', phone: '0900-000-002', mfgDate: '2020-09-01', note: '' },
+      v3: { plate: 'DEMO-103', type: '大車', seats: 43, status: '維修', driver: '範例司機丙', phone: '0900-000-003', mfgDate: '2016-12-20', note: '冷氣保養中' },
+      v4: { plate: 'DEMO-201', type: '中車', seats: 21, status: '可派', driver: '範例司機丁', phone: '0900-000-004', mfgDate: '2021-06-18', note: '' },
+      v5: { plate: 'DEMO-202', type: '中車', seats: 21, status: '可派', driver: '範例司機戊', phone: '0900-000-005', mfgDate: '2023-02-08', note: '' },
+    },
+    customers: {
+      c1: { name: '範例國小', type: 'school', contact: '總務處', phone: '02-0000-0001', pickup: '國小側門', note: '' },
+      c2: { name: '範例國中', type: 'school', contact: '學務處', phone: '02-0000-0002', pickup: '國中大門', note: '' },
+      c3: { name: '範例文理補習班', type: 'cram', contact: '班主任', phone: '02-0000-0003', pickup: '補習班門口', note: '週一至週五' },
+      c4: { name: '範例旅行社', type: 'tour', contact: '業務窗口', phone: '02-0000-0004', pickup: '捷運站出口', note: '' },
+      c5: { name: '範例宮進香團', type: 'pilgrim', contact: '總幹事', phone: '02-0000-0005', pickup: '廟埕', note: '需放置神轎空間' },
+    },
+    trips: {},
+  };
+
+  // 產生「上個月 1 號 ~ 下週」的車趟，讓儀表板和月報表都有內容
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const end = new Date(today); end.setDate(end.getDate() + 7);
+  let n = 0;
+  const add = t => { s.trips['t' + (++n)] = t; };
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const date = ymd(d), wd = d.getDay(), isToday = date === ymd(today), future = d > today;
+    if (wd >= 1 && wd <= 5) {
+      add({ date, type: 'school', customerId: 'c1', start: '06:40', end: '07:40', pickup: '社區站牌', destination: '範例國小', pax: 38, vehicleType: '大車', vehicleId: 'v1', note: '上學' });
+      add({ date, type: 'school', customerId: 'c2', start: '06:50', end: '07:45', pickup: '老街站牌', destination: '範例國中', pax: 40, vehicleType: '大車', vehicleId: 'v2', note: '上學' });
+      add({ date, type: 'school', customerId: 'c1', start: '15:50', end: '16:50', pickup: '範例國小', destination: '社區站牌', pax: 38, vehicleType: '大車', vehicleId: 'v1', note: '放學' });
+      add({ date, type: 'school', customerId: 'c2', start: '16:30', end: '17:30', pickup: '範例國中', destination: '老街站牌', pax: 40, vehicleType: '大車', vehicleId: (isToday || future) ? null : 'v2', note: '放學' });
+      add({ date, type: 'cram', customerId: 'c3', start: '17:00', end: '17:40', pickup: '範例國中', destination: '範例文理補習班', pax: 16, vehicleType: '中車', vehicleId: 'v4', note: '' });
+      add({ date, type: 'cram', customerId: 'c3', start: '21:00', end: '21:50', pickup: '範例文理補習班', destination: '沿線各站', pax: 16, vehicleType: '中車', vehicleId: (isToday || future) ? null : 'v4', note: '下課送回' });
+    }
+    if (wd === 6 || wd === 0 || isToday) {
+      add({ date, type: 'tour', customerId: 'c4', start: '08:30', end: '17:00', pickup: '捷運站出口', destination: '海岸一日遊', pax: 19, vehicleType: '中車', vehicleId: future ? null : 'v5', note: '' });
+    }
+    if (d.getDate() % 9 === 3 || isToday) {
+      add({ date, type: 'pilgrim', customerId: 'c5', start: '07:30', end: '18:00', pickup: '廟埕', destination: '中南部進香', pax: 42, vehicleType: '大車', vehicleId: isToday ? null : 'v2', note: '' });
+    }
+  }
+  return s;
+}
+
+const store = buildSeed();
+const subs = new Set();
+let notifyQueued = false;
+const notify = () => { if (notifyQueued) return; notifyQueued = true; setTimeout(() => { notifyQueued = false; subs.forEach(f => f()); }, 0); };
+const clone = o => JSON.parse(JSON.stringify(o));
+const newId = () => 'id' + Math.random().toString(36).slice(2, 10);
+
+// ---- firebase-app ----
+function initializeApp() { return {}; }
+async function deleteApp() {}
+
+// ---- firebase-firestore ----
+function getFirestore() { return {}; }
+function collection(fs, name) { return { name }; }
+function doc(a, b, c) { if (c !== undefined) return { coll: b, id: c }; return { coll: a.name, id: newId() }; }
+function where(f, op, v) { return { f, op, v }; }
+function query(q, w) { return { name: q.name, ws: [...(q.ws || []), w] }; }
+function test(x, w) {
+  switch (w.op) {
+    case '>=': return x >= w.v; case '<=': return x <= w.v;
+    case '>': return x > w.v; case '<': return x < w.v;
+    case '!=': return x !== w.v; default: return x === w.v;
+  }
+}
+function run(q) {
+  let docs = Object.entries(store[q.name] || {}).map(([id, d]) => ({ id, data: () => clone(d), exists: () => true }));
+  (q.ws || []).forEach(w => { docs = docs.filter(d => test(d.data()[w.f], w)); });
+  return { docs, size: docs.length, empty: !docs.length, metadata: { fromCache: false } };
+}
+function one(d) {
+  const v = (store[d.coll] || {})[d.id];
+  return { id: d.id, exists: () => !!v, data: () => (v ? clone(v) : undefined), metadata: { fromCache: false } };
+}
+function onSnapshot(q, next) {
+  const f = () => next(q.coll ? one(q) : run(q));
+  subs.add(f); setTimeout(f, 0);
+  return () => subs.delete(f);
+}
+async function getDocs(q) { return run(q); }
+async function getDoc(d) { return one(d); }
+async function setDoc(d, data) { (store[d.coll] ??= {})[d.id] = clone(data); notify(); }
+async function deleteDoc(d) { delete (store[d.coll] || {})[d.id]; notify(); }
+function writeBatch() {
+  const ops = [];
+  return { set(d, data) { ops.push([d, data]); }, async commit() { ops.forEach(([d, data]) => { (store[d.coll] ??= {})[d.id] = clone(data); }); notify(); } };
+}
+
+// ---- firebase-auth ----
+function getAuth() { return { currentUser: { email: DEMO_EMAIL } }; }
+class GoogleAuthProvider {}
+async function signInWithPopup() {}
+function onAuthStateChanged(a, cb) { setTimeout(() => cb({ email: DEMO_EMAIL, displayName: '展示帳號' }), 0); return () => {}; }
+async function signOut() { location.reload(); }
+async function signInWithEmailAndPassword() {}
+async function createUserWithEmailAndPassword() {}
+async function updatePassword() {}
+async function reauthenticateWithCredential() {}
+const EmailAuthProvider = { credential: () => ({}) };
+
+return {initializeApp,deleteApp,getFirestore,collection,doc,where,query,onSnapshot,getDocs,getDoc,setDoc,deleteDoc,writeBatch,getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut,signInWithEmailAndPassword,createUserWithEmailAndPassword,updatePassword,reauthenticateWithCredential,EmailAuthProvider};
+})();
+const {initializeApp, deleteApp,getFirestore, collection: fsCollection, doc: fsDoc, query: fsQuery, where: fsWhere,
+  onSnapshot: fsOnSnapshot, getDocs, getDoc, setDoc, deleteDoc, writeBatch,getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut,
+  signInWithEmailAndPassword, createUserWithEmailAndPassword, updatePassword, EmailAuthProvider, reauthenticateWithCredential} = __fb;
+const firebaseConfig = {authDomain:"demo.local"};
 
 const app = initializeApp(firebaseConfig);
+/* 帳號密碼登入：帳號 dispatch → dispatch@<authDomain>（Firebase 需要 email 格式，這不是真的信箱） */
+const ACCT_DOMAIN = String(firebaseConfig.authDomain||'dispatch.local').toLowerCase();
+const userToEmail = u => `${u.trim().toLowerCase()}@${ACCT_DOMAIN}`;
+const isAcct = e => String(e||'').endsWith('@'+ACCT_DOMAIN);
+const shownId = e => isAcct(e) ? e.slice(0, -(ACCT_DOMAIN.length+1)) : e;
+const USER_RE = /^[a-z0-9][a-z0-9._-]{1,29}$/;
 const fs = getFirestore(app);
 const auth = getAuth(app);
 
@@ -672,9 +856,10 @@ function renderNav(){
   $('#side').hidden=!(S.authz==='ok');$('#rail').hidden=!(S.authz==='ok');$('#menuBtn').hidden=!(S.authz==='ok');
   const r=myRole();
   $('#userBox').hidden=!(S.authz==='ok');
-  $('#userName').textContent=S.me?.name||S.email||'—';
+  $('#userName').textContent=S.me?.name||shownId(S.email)||'—';
   $('#userRole').textContent=r?r.name+(S.me?.groupId&&groupById(S.me.groupId)?' · '+groupById(S.me.groupId).name:''):'';
-  $('#userEmail').textContent=S.email;
+  $('#userEmail').textContent=isAcct(S.email)?'帳號：'+shownId(S.email):S.email;
+  $('#userPw').hidden=!isAcct(S.email);
   $('#userMenuName').innerHTML=`${esc(S.me?.name||'')}<small>${esc($('#userRole').textContent)}</small>`;
   $('#nav').innerHTML=MENU.map(g=>{
     const items=g.children.filter(c=>keys.includes(c.key));if(!items.length)return '';
@@ -1093,9 +1278,9 @@ function moduleChips(r){
 function renderMembers(){
   const list=[...S.members].sort((a,b)=>(roleById(a.roleId)?.order??99)-(roleById(b.roleId)?.order??99)||String(a.name||a.email).localeCompare(String(b.name||b.email)));
   if(!list.length){$('#memberTbl').innerHTML=`<tr><td class="empty"><strong>還沒有其他人員</strong>按「＋ 新增人員」輸入同事的 Gmail 並指定角色，對方就能登入。</td></tr>`;return}
-  $('#memberTbl').innerHTML=`<thead><tr><th>姓名</th><th>Gmail</th><th>角色</th><th>群組</th><th>可瀏覽功能</th><th>狀態</th><th></th></tr></thead><tbody>`+
+  $('#memberTbl').innerHTML=`<thead><tr><th>姓名</th><th>登入帳號</th><th>角色</th><th>群組</th><th>可瀏覽功能</th><th>狀態</th><th></th></tr></thead><tbody>`+
   list.map(m=>{const r=roleById(m.roleId),g=groupById(m.groupId);
-    return `<tr><td><b>${esc(m.name||'—')}</b>${m.email===S.email?' <span class="chip">你</span>':''}</td><td class="mono">${esc(m.email)}</td><td>${r?`<span class="chip big">${esc(r.name)}</span>`:'<span class="chip bad">未指定</span>'}</td><td>${esc(g?g.name:'—')}</td><td>${moduleChips(r)}</td><td>${m.active===false?'<span class="chip bad">停用</span>':'<span class="chip">啟用</span>'}</td><td><div class="row-act"><button class="btn sm" data-member="${esc(m.email)}">編輯</button></div></td></tr>`}).join('')+`</tbody>`;
+    return `<tr><td><b>${esc(m.name||'—')}</b>${m.email===S.email?' <span class="chip">你</span>':''}</td><td><span class="mono">${esc(shownId(m.email))}</span> <span class="chip">${isAcct(m.email)?'帳號密碼':'Google'}</span></td><td>${r?`<span class="chip big">${esc(r.name)}</span>`:'<span class="chip bad">未指定</span>'}</td><td>${esc(g?g.name:'—')}</td><td>${moduleChips(r)}</td><td>${m.active===false?'<span class="chip bad">停用</span>':'<span class="chip">啟用</span>'}</td><td><div class="row-act"><button class="btn sm" data-member="${esc(m.email)}">編輯</button></div></td></tr>`}).join('')+`</tbody>`;
 }
 function renderRoles(){
   const list=rolesList();
@@ -1128,11 +1313,24 @@ document.addEventListener('change',async e=>{
   c.disabled=false;
 });
 
-let editingMember=null;
+let editingMember=null,mfKind='pw';
+function setKind(k,lock){
+  mfKind=k;document.querySelectorAll('#mf-kind button').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.kind===k));b.disabled=!!lock});
+  $('#mf-email-l').hidden=k!=='google';$('#mf-user-l').hidden=k!=='pw';$('#mf-pass-l').hidden=k!=='pw'||!!lock;
+}
+document.querySelectorAll('#mf-kind button').forEach(b=>b.addEventListener('click',()=>setKind(b.dataset.kind)));
+async function createAccount(email,pw){
+  // 用第二個 Firebase 連線建立帳號，避免把目前的管理員登出
+  const sec=initializeApp(firebaseConfig,'acct-'+Date.now());
+  try{const a=getAuth(sec);await createUserWithEmailAndPassword(a,email,pw);await signOut(a)}
+  finally{try{await deleteApp(sec)}catch(e){}}
+}
 function fillSel(sel,list,val,empty){sel.innerHTML=(empty?`<option value="">${empty}</option>`:'')+list.map(x=>`<option value="${esc(x.id)}" ${x.id===val?'selected':''}>${esc(x.name)}</option>`).join('')}
 function openMember(m){
   editingMember=m||null;$('#memberDlgTitle').textContent=m?'編輯人員':'新增人員';
-  $('#mf-email').value=m?.email||'';$('#mf-email').disabled=!!m;
+  setKind(m?(isAcct(m.email)?'pw':'google'):'pw',!!m);
+  $('#mf-email').value=m&&!isAcct(m.email)?m.email:'';$('#mf-user').value=m&&isAcct(m.email)?shownId(m.email):'';$('#mf-pass').value='';
+  $('#mf-email').disabled=$('#mf-user').disabled=!!m;
   $('#mf-name').value=m?.name||'';
   fillSel($('#mf-role'),rolesList(),m?.roleId||'staff');
   fillSel($('#mf-group'),groupsList(),m?.groupId||'','（不分組）');
@@ -1144,15 +1342,34 @@ function openMember(m){
 $('#addMember').onclick=()=>openMember(null);
 $('#memberForm').addEventListener('submit',async e=>{
   e.preventDefault();
-  const email=(editingMember?.email||$('#mf-email').value).trim().toLowerCase();
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){$('#mf-warn').textContent='請輸入正確的 Gmail 地址';return}
-  if(!editingMember&&S.members.some(m=>m.email===email)){$('#mf-warn').textContent='這個 Gmail 已經在名單裡了';return}
+  let email;
+  if(editingMember)email=editingMember.email;
+  else if(mfKind==='pw'){
+    const u=$('#mf-user').value.trim().toLowerCase();
+    if(!USER_RE.test(u)){$('#mf-warn').textContent='帳號請用 2～30 個英文小寫、數字或 . _ -，第一個字要是英文或數字';return}
+    if($('#mf-pass').value.length<6){$('#mf-warn').textContent='密碼至少要 6 碼';return}
+    email=userToEmail(u);
+  }else{
+    email=$('#mf-email').value.trim().toLowerCase();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||isAcct(email)){$('#mf-warn').textContent='請輸入正確的 Gmail 地址';return}
+  }
+  if(!editingMember&&S.members.some(m=>m.email===email)){$('#mf-warn').textContent='這個帳號已經在名單裡了';return}
   const data={email,name:$('#mf-name').value.trim(),roleId:$('#mf-role').value,groupId:$('#mf-group').value,active:$('#mf-active').checked,updatedAt:new Date().toISOString()};
   if(email===S.email){
     if(!data.active){$('#mf-warn').textContent='不能停用自己的帳號';return}
     if(!roleCanManage(roleById(data.roleId))){$('#mf-warn').textContent='不能把自己改成沒有權限管理的角色，以免把自己鎖在外面';return}
   }
-  if(await save('members',email,data)){$('#memberDlg').close();toast(editingMember?'已更新人員':'已新增人員，對方現在可以用這個 Gmail 登入')}
+  if(!editingMember&&mfKind==='pw'){
+    try{await createAccount(email,$('#mf-pass').value)}
+    catch(err){
+      const c=err&&err.code;
+      $('#mf-warn').textContent=c==='auth/email-already-in-use'?'這個帳號名稱已經存在（可能是之前建立過）。請換一個名稱，或到 Firebase 主控台 Authentication 刪除舊帳號後再建立':
+        c==='auth/operation-not-allowed'?'Firebase 還沒開啟「電子郵件/密碼」登入方式，請先到 Firebase 主控台開啟':
+        c==='auth/weak-password'?'密碼太簡單，請至少 6 碼':'建立帳號失敗：'+(c||err.message);
+      return;
+    }
+  }
+  if(await save('members',email,data)){$('#memberDlg').close();toast(editingMember?'已更新人員':(mfKind==='pw'?`已建立帳號「${shownId(email)}」，請把密碼告訴對方`:'已新增人員，對方現在可以用這個 Gmail 登入'))}
 });
 
 let editingRole=null;
@@ -1335,7 +1552,7 @@ function boot(){
             if(e&&e.code&&e.code!=='permission-denied'){denyLogin('建立管理員資料失敗：'+e.code);return}
           }
         }
-        denyLogin(`${S.email} 還沒有開通，請系統管理員或經理在「權限管理」加入你的 Gmail。`);return;
+        denyLogin(`${shownId(S.email)} 還沒有開通，請系統管理員或經理在「權限管理」加入你的帳號。`);return;
       }
       clearTimeout(boot.slow);
       const m=snap.data()||{};
@@ -1347,6 +1564,29 @@ function boot(){
   });
   setInterval(()=>{if(S.tab==='dash'&&S.date===ymd(new Date())&&S.authz==='ok')renderDash()},60000);
 }
+$('#pwForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const u=$('#lg-user').value.trim().toLowerCase(),pw=$('#lg-pass').value;
+  const email=u.includes('@')?u:userToEmail(u);
+  const btn=$('#pwBtn');btn.disabled=true;btn.textContent='登入中…';
+  try{await signInWithEmailAndPassword(auth,email,pw);$('#lg-pass').value=''}
+  catch(err){const c=err&&err.code;
+    $('#loginMsg').textContent=(c==='auth/invalid-credential'||c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-email')?'帳號或密碼不正確':
+      c==='auth/too-many-requests'?'嘗試太多次了，請稍等幾分鐘再試':c==='auth/operation-not-allowed'?'系統還沒開啟帳號密碼登入，請聯絡系統管理員':'登入失敗：'+(c||err.message)}
+  btn.disabled=false;btn.textContent='登入';
+});
+$('#userPw').onclick=()=>{setUserMenu(false);['pc-old','pc-new','pc-new2'].forEach(i=>$('#'+i).value='');$('#pc-user').value=shownId(S.email);$('#pc-warn').textContent='';$('#pwDlg').showModal()};
+$('#pwChgForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const o=$('#pc-old').value,n=$('#pc-new').value;
+  if(n.length<6){$('#pc-warn').textContent='新密碼至少要 6 碼';return}
+  if(n!==$('#pc-new2').value){$('#pc-warn').textContent='兩次輸入的新密碼不一樣';return}
+  try{
+    const u=auth.currentUser;
+    await reauthenticateWithCredential(u,EmailAuthProvider.credential(u.email,o));
+    await updatePassword(u,n);$('#pwDlg').close();toast('密碼已更新');
+  }catch(err){const c=err&&err.code;$('#pc-warn').textContent=(c==='auth/invalid-credential'||c==='auth/wrong-password')?'目前密碼不正確':'更新失敗：'+(c||err.message)}
+});
 $('#loginBtn').onclick=async()=>{
   try{await signInWithPopup(auth,new GoogleAuthProvider())}
   catch(e){if(e.code!=='auth/popup-closed-by-user')$('#loginMsg').textContent='登入失敗：'+(e.code||e.message)}
