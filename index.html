@@ -133,6 +133,12 @@ body.nav-collapsed .collapse-btn svg{transform:rotate(180deg)}
 .matrix input[disabled]{cursor:not-allowed;opacity:.6}
 .matrix th.mgr{border-left:2px solid var(--line)} .matrix td.mgr{border-left:2px solid var(--line)}
 .mods{display:flex;flex-wrap:wrap;gap:4px}
+.rp-f{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.rp-f input,.rp-f select{color:var(--ink)}
+.rp-sum{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.rp-sum .chip{font-size:12px;padding:2px 9px}
+table.rp td,table.rp th{white-space:nowrap}
+table.rp td.wrap{white-space:normal;min-width:160px}
 .gate{padding:60px 16px;text-align:center;color:var(--muted)}
 
 .banner{margin-top:14px;padding:10px 14px;border-radius:10px;background:var(--sand);font-size:13px}
@@ -330,7 +336,7 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
 
   <div id="view-vehicles" hidden>
     <section class="panel">
-      <div class="panel-h"><h2>車輛資料</h2><span class="spacer"></span><button class="btn primary" id="addVeh">＋ 新增車輛</button></div>
+      <div class="panel-h"><h2>車籍資料</h2><span class="sub">「迄今」依出廠日自動計算到今天</span><span class="spacer"></span><button class="btn primary" id="addVeh">＋ 新增車輛</button></div>
       <div class="tbl-wrap"><table id="vehTbl"></table></div>
     </section>
   </div>
@@ -339,6 +345,19 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
     <section class="panel">
       <div class="panel-h"><h2>車趟類型</h2><span class="sub">新增、改名、換顏色或調整順序；停用後不會出現在新增選單，舊資料照常顯示</span><span class="spacer"></span><button class="btn primary" id="addType">＋ 新增類型</button></div>
       <div class="tbl-wrap"><table id="typeTbl"></table></div>
+    </section>
+  </div>
+
+  <div id="view-monthly" hidden>
+    <section class="panel">
+      <div class="panel-h">
+        <h2>月報表</h2><span class="sub" id="rpSub"></span><span class="spacer"></span>
+        <label class="rp-f">月份<input type="month" id="rpMonth"></label>
+        <label class="rp-f">車號<select id="rpVeh"></select></label>
+        <button class="btn primary" id="rpExport">匯出 Excel</button>
+      </div>
+      <div class="rp-sum" id="rpSum"></div>
+      <div class="tbl-wrap"><table id="rpTbl" class="rp"></table></div>
     </section>
   </div>
 
@@ -434,6 +453,8 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
       <label>狀態<select id="vf-status"><option>可派</option><option>維修</option><option>停用</option></select></label>
       <label>司機<input type="text" id="vf-driver"></label>
       <label>司機電話<input type="tel" id="vf-phone"></label>
+      <label>出廠日<input type="date" id="vf-mfg"></label>
+      <label>迄今<input type="text" id="vf-age" readonly tabindex="-1" placeholder="選擇出廠日後自動計算"></label>
       <label class="full">備註<input type="text" id="vf-note"></label>
     </div>
     <div class="dlg-f">
@@ -609,20 +630,22 @@ const ICONS={
   tripTypes:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.2"/>',
   members:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M17 11l2 2 3-4"/>',
   roles:'<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  monthly:'<rect x="4" y="4" width="16" height="17" rx="2"/><path d="M4 9h16M9 4v-1M15 4v-1"/><path d="M8 17v-3M12 17v-5M16 17v-2"/>',
   groups:'<circle cx="8" cy="9" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M2.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6M14.5 15.2c2.6-.4 4.9.8 6 3.8"/>',
 };
 const MENU=[
   {key:'ops',label:'派車作業',children:[{key:'dash',label:'儀表板'},{key:'trips',label:'車趟管理'}]},
-  {key:'base',label:'基本資料',children:[{key:'customers',label:'客戶資料'},{key:'vehicles',label:'車輛資料'}]},
+  {key:'base',label:'基本資料',children:[{key:'customers',label:'客戶資料'},{key:'vehicles',label:'車籍資料'}]},
+  {key:'opm',label:'營運管理',children:[{key:'monthly',label:'月報表'}]},
   {key:'sys',label:'系統設定',children:[{key:'tripTypes',label:'車趟類型'},{key:'members',label:'權限管理'},{key:'roles',label:'角色管理'},{key:'groups',label:'群組管理'}]},
 ];
-const MODULES=[['dash','儀表板'],['trips','車趟管理'],['customers','客戶資料'],['vehicles','車輛資料'],['tripTypes','車趟類型']];
+const MODULES=[['dash','儀表板'],['trips','車趟管理'],['customers','客戶資料'],['vehicles','車籍資料'],['monthly','月報表'],['tripTypes','車趟類型']];
 const MGR_KEYS=['members','roles','groups'];
 const ALL_KEYS=MENU.flatMap(g=>g.children.map(c=>c.key));
 const DEFAULT_ROLES=[
   {id:'admin',name:'系統管理員',order:1,canManage:true,modules:MODULES.map(m=>m[0]),locked:true},
   {id:'manager',name:'經理',order:2,canManage:true,modules:MODULES.map(m=>m[0])},
-  {id:'assistant',name:'特助',order:3,canManage:false,modules:['dash','trips','customers','vehicles','tripTypes']},
+  {id:'assistant',name:'特助',order:3,canManage:false,modules:['dash','trips','customers','vehicles','tripTypes','monthly']},
   {id:'leader',name:'組長',order:4,canManage:false,modules:['dash','trips','customers','vehicles']},
   {id:'staff',name:'組員',order:5,canManage:false,modules:['dash','trips']},
 ];
@@ -642,7 +665,7 @@ function allowedKeys(){
 }
 const can=k=>allowedKeys().includes(k);
 const labelOf=k=>MENU.flatMap(g=>g.children.map(c=>({...c,grp:g.label}))).find(c=>c.key===k);
-let navCollapsed=false,openGroups={ops:true,base:true,sys:true};
+let navCollapsed=false,openGroups={ops:true,base:true,opm:true,sys:true};
 try{navCollapsed=localStorage.getItem('dispatch.nav')==='1';const og=JSON.parse(localStorage.getItem('dispatch.groups')||'null');if(og)openGroups=og}catch(e){}
 document.body.classList.toggle('nav-collapsed',navCollapsed);
 function renderNav(){
@@ -728,6 +751,7 @@ function render(){
   if(S.tab==='customers')renderCust();
   if(S.tab==='vehicles')renderVeh();
   if(S.tab==='tripTypes')renderTypes();
+  if(S.tab==='monthly')renderReport();
   if(S.tab==='members')renderMembers();
   if(S.tab==='roles')renderRoles();
   if(S.tab==='groups')renderGroups();
@@ -845,11 +869,20 @@ function renderCust(){
   list.map(c=>`<tr><td><b>${esc(c.name)}</b>${sampleChip(c)}</td><td>${typePill(c.type)}</td><td>${esc(c.contact||'—')}</td><td class="mono">${esc(c.phone||'—')}</td><td>${esc(c.pickup||'—')}</td><td class="muted">${esc(c.note||'')}</td><td><div class="row-act"><button class="btn sm" data-cust="${esc(c.id)}">編輯</button></div></td></tr>`).join('')+`</tbody>`;
 }
 
+function vehAge(d){
+  if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d))return null;
+  const start=parseYmd(d),now=new Date();now.setHours(0,0,0,0);
+  if(start>now)return null;
+  let months=(now.getFullYear()-start.getFullYear())*12+(now.getMonth()-start.getMonth());
+  if(now.getDate()<start.getDate())months--;
+  const y=Math.floor(months/12),m=months%12;
+  return {y,m,text:`${y} 年 ${m} 個月`};
+}
 function renderVeh(){
   if(!S.ready.v){$('#vehTbl').innerHTML=`<tr><td class="empty">正在載入…</td></tr>`;return}
   if(!S.vehicles.length){$('#vehTbl').innerHTML=`<tr><td class="empty"><strong>還沒有車輛</strong>新增車牌、車種（大車／中車）與司機，就能開始派車。</td></tr>`;return}
-  $('#vehTbl').innerHTML=`<thead><tr><th>車牌</th><th>車種</th><th>座位</th><th>司機</th><th>司機電話</th><th>狀態</th><th>備註</th><th></th></tr></thead><tbody>`+
-  [...S.vehicles].sort(sortVeh).map(v=>`<tr><td class="mono"><b>${esc(v.plate)}</b>${sampleChip(v)}</td><td><span class="chip big">${esc(v.type)}</span></td><td class="mono">${esc(v.seats||'—')}</td><td>${esc(v.driver||'—')}</td><td class="mono">${esc(v.phone||'—')}</td><td>${usable(v)?'<span class="chip">可派</span>':`<span class="chip bad">${esc(v.status)}</span>`}</td><td class="muted">${esc(v.note||'')}</td><td><div class="row-act"><button class="btn sm" data-veh="${esc(v.id)}">編輯</button></div></td></tr>`).join('')+`</tbody>`;
+  $('#vehTbl').innerHTML=`<thead><tr><th>車牌</th><th>車種</th><th>座位</th><th>出廠日</th><th>迄今</th><th>司機</th><th>司機電話</th><th>狀態</th><th>備註</th><th></th></tr></thead><tbody>`+
+  [...S.vehicles].sort(sortVeh).map(v=>`<tr><td class="mono"><b>${esc(v.plate)}</b>${sampleChip(v)}</td><td><span class="chip big">${esc(v.type)}</span></td><td class="mono">${esc(v.seats||'—')}</td><td class="mono">${esc(v.mfgDate?v.mfgDate.replace(/-/g,'/'):'—')}</td><td class="mono">${esc(vehAge(v.mfgDate)?.text||'—')}</td><td>${esc(v.driver||'—')}</td><td class="mono">${esc(v.phone||'—')}</td><td>${usable(v)?'<span class="chip">可派</span>':`<span class="chip bad">${esc(v.status)}</span>`}</td><td class="muted">${esc(v.note||'')}</td><td><div class="row-act"><button class="btn sm" data-veh="${esc(v.id)}">編輯</button></div></td></tr>`).join('')+`</tbody>`;
 }
 
 /* ---------- dialogs ---------- */
@@ -929,17 +962,19 @@ $('#custForm').addEventListener('submit',async e=>{
 });
 
 let editingVeh=null;
+function updAge(){const a=vehAge($('#vf-mfg').value);$('#vf-age').value=a?a.text:($('#vf-mfg').value?'出廠日在未來':'')}
+$('#vf-mfg').addEventListener('change',updAge);$('#vf-mfg').addEventListener('input',updAge);
 function openVeh(v){
   editingVeh=v||null;$('#vehDlgTitle').textContent=v?'編輯車輛':'新增車輛';
   $('#vf-plate').value=v?.plate||'';$('#vf-type').value=v?.type||'大車';$('#vf-seats').value=v?.seats??'';
-  $('#vf-status').value=v?.status||'可派';$('#vf-driver').value=v?.driver||'';$('#vf-phone').value=v?.phone||'';$('#vf-note').value=v?.note||'';
+  $('#vf-status').value=v?.status||'可派';$('#vf-driver').value=v?.driver||'';$('#vf-phone').value=v?.phone||'';$('#vf-note').value=v?.note||'';$('#vf-mfg').value=v?.mfgDate||'';updAge();
   const del=$('#vf-del');del.hidden=!v;
   if(v)armDelete(del,async()=>{if(await remove('vehicles',v.id)){$('#vehDlg').close();toast('已刪除車輛')}});
   $('#vehDlg').showModal();
 }
 $('#vehForm').addEventListener('submit',async e=>{
   e.preventDefault();
-  const data={plate:$('#vf-plate').value.trim().toUpperCase(),type:$('#vf-type').value,seats:$('#vf-seats').value?Number($('#vf-seats').value):null,status:$('#vf-status').value,driver:$('#vf-driver').value.trim(),phone:$('#vf-phone').value.trim(),note:$('#vf-note').value.trim()};
+  const data={mfgDate:$('#vf-mfg').value||null,plate:$('#vf-plate').value.trim().toUpperCase(),type:$('#vf-type').value,seats:$('#vf-seats').value?Number($('#vf-seats').value):null,status:$('#vf-status').value,driver:$('#vf-driver').value.trim(),phone:$('#vf-phone').value.trim(),note:$('#vf-note').value.trim()};
   if(!data.plate)return;if(editingVeh?.sample)data.sample=true;
   if(await save('vehicles',editingVeh?.id,data)){$('#vehDlg').close();toast('已儲存車輛')}
 });
@@ -975,6 +1010,77 @@ $('#typeForm').addEventListener('submit',async e=>{
   if(!data.active&&activeTypes().filter(x=>x.id!==editingType?.id).length===0){$('#yf-warn').textContent='至少要保留一個啟用中的類型';return}
   if(await save('tripTypes',editingType?.id,data)){$('#typeDlg').close();toast('已儲存類型')}
 });
+
+/* ---------- monthly report ---------- */
+const RP={month:'',veh:'all',rows:[],loading:false,loadedKey:''};
+(function(){const d=new Date();RP.month=`${d.getFullYear()}-${pad(d.getMonth()+1)}`})();
+function monthRange(m){const[y,mo]=m.split('-').map(Number);const last=new Date(y,mo,0).getDate();return[`${m}-01`,`${m}-${pad(last)}`]}
+async function loadReport(force){
+  if(!db||!RP.month)return;
+  const key=RP.month;if(!force&&RP.loadedKey===key)return;
+  RP.loading=true;renderReport();
+  try{
+    const[a,b]=monthRange(RP.month);
+    const snap=await db.collection('trips').where('date','>=',a).where('date','<=',b).get();
+    RP.rows=snap.docs.map(d=>({id:d.id,...d.data()}));RP.loadedKey=key;
+  }catch(e){RP.rows=[];toast(errMsg(e))}
+  RP.loading=false;renderReport();
+}
+function reportRows(){
+  let rows=[...RP.rows];
+  if(RP.veh==='none')rows=rows.filter(t=>!tripVeh(t));
+  else if(RP.veh!=='all')rows=rows.filter(t=>t.vehicleId===RP.veh);
+  return rows.sort((a,b)=>String(a.date).localeCompare(String(b.date))||sortTrip(a,b));
+}
+function reportRecord(t){
+  const c=custById(t.customerId),v=tripVeh(t),d=parseYmd(t.date);
+  return {'日期':t.date,'星期':WK[d.getDay()],'出車':t.start||'','結束':t.end||'','類型':typeLabel(t.type),'客戶':c?c.name:'','上車地點':t.pickup||'','目的地':t.destination||'','人數':t.pax??'','需求車種':t.vehicleType||'','車號':v?v.plate:'未派車','車種':v?v.type:'','司機':v?(v.driver||''):'','備註':t.note||''};
+}
+function renderReport(){
+  if($('#rpMonth').value!==RP.month)$('#rpMonth').value=RP.month;
+  const sel=$('#rpVeh');const cur=RP.veh;
+  sel.innerHTML=`<option value="all">全部車輛</option>`+[...S.vehicles].sort(sortVeh).map(v=>`<option value="${esc(v.id)}">${esc(v.plate)}｜${esc(v.type)}${v.driver?'｜'+esc(v.driver):''}</option>`).join('')+`<option value="none">未派車的車趟</option>`;
+  sel.value=[...sel.options].some(o=>o.value===cur)?cur:'all';RP.veh=sel.value;
+  if(RP.loadedKey!==RP.month&&!RP.loading){loadReport();return}
+  const[y,m]=RP.month.split('-');
+  if(RP.loading){$('#rpSub').textContent='';$('#rpSum').innerHTML='';$('#rpTbl').innerHTML=`<tr><td class="empty">正在載入 ${y} 年 ${Number(m)} 月的車趟…</td></tr>`;return}
+  const rows=reportRows();
+  const vname=RP.veh==='all'?'全部車輛':RP.veh==='none'?'未派車':(vehById(RP.veh)?.plate||'');
+  $('#rpSub').textContent=`${y} 年 ${Number(m)} 月 · ${vname}`;
+  const pax=rows.reduce((n,t)=>n+(Number(t.pax)||0),0);
+  const byType={};rows.forEach(t=>byType[t.type]=(byType[t.type]||0)+1);
+  const days=new Set(rows.map(t=>t.date)).size;
+  $('#rpSum').innerHTML=`<span class="chip big">共 ${rows.length} 趟</span><span class="chip">出車 ${days} 天</span><span class="chip">載客 ${pax} 人次</span>${RP.veh==='all'?`<span class="chip ${rows.filter(t=>!tripVeh(t)).length?'bad':''}">未派車 ${rows.filter(t=>!tripVeh(t)).length} 趟</span>`:''}`+
+    Object.entries(byType).map(([k,n])=>`<span class="pill tt" style="${tc(k)}">${esc(typeLabel(k))} ${n}</span>`).join('');
+  $('#rpExport').disabled=!rows.length;
+  if(!rows.length){$('#rpTbl').innerHTML=`<tr><td class="empty"><strong>這個月沒有車趟</strong>換個月份或車號看看。</td></tr>`;return}
+  $('#rpTbl').innerHTML=`<thead><tr><th>#</th><th>日期</th><th>出車</th><th>結束</th><th>類型</th><th>客戶</th><th>上車地點 → 目的地</th><th>人數</th><th>車號</th><th>司機</th><th>備註</th></tr></thead><tbody>`+
+  rows.map((t,i)=>{const r=reportRecord(t);return `<tr><td class="mono muted">${i+1}</td><td class="mono">${esc(r['日期'].slice(5).replace('-','/'))}（${r['星期']}）</td><td class="mono">${esc(r['出車'])}</td><td class="mono">${esc(r['結束'])}</td><td>${typePill(t.type)}</td><td>${esc(r['客戶']||'—')}</td><td class="wrap">${esc(r['上車地點']||'—')} → ${esc(r['目的地']||'—')}</td><td class="mono">${esc(r['人數']||'—')}</td><td class="mono">${tripVeh(t)?esc(r['車號']):'<span class="chip bad">未派車</span>'}</td><td>${esc(r['司機']||'—')}</td><td class="wrap muted">${esc(r['備註'])}</td></tr>`}).join('')+`</tbody>`;
+}
+$('#rpMonth').addEventListener('change',e=>{if(e.target.value){RP.month=e.target.value;renderReport()}});
+$('#rpVeh').addEventListener('change',e=>{RP.veh=e.target.value;renderReport()});
+function loadXLSX(){
+  if(window.XLSX)return Promise.resolve(window.XLSX);
+  return new Promise((ok,bad)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';sc.onload=()=>ok(window.XLSX);sc.onerror=()=>bad(new Error('load'));document.head.appendChild(sc)});
+}
+$('#rpExport').onclick=async()=>{
+  const rows=reportRows();if(!rows.length)return;
+  const btn=$('#rpExport');btn.disabled=true;btn.textContent='產生中…';
+  try{
+    const X=await loadXLSX();
+    const data=rows.map(reportRecord);
+    const ws=X.utils.json_to_sheet(data);
+    ws['!cols']=[12,6,7,7,10,16,16,22,6,9,11,6,10,24].map(w=>({wch:w}));
+    const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,'車趟明細');
+    const vname=RP.veh==='all'?'全部車輛':RP.veh==='none'?'未派車':(vehById(RP.veh)?.plate||'車輛');
+    const buf=X.write(wb,{bookType:'xlsx',type:'array'});
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`月報表-${RP.month}-${vname}.xlsx`;
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    toast(`已匯出 ${rows.length} 趟`);
+  }catch(e){toast('匯出失敗，請確認網路連線後再試一次')}
+  btn.disabled=false;btn.textContent='匯出 Excel';
+};
 
 /* ---------- members / roles / groups ---------- */
 const memberCount=(field,id)=>S.members.filter(m=>m[field]===id).length;
@@ -1111,7 +1217,7 @@ $('#collapseBtn').onclick=()=>{navCollapsed=!navCollapsed;document.body.classLis
 document.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.grp){if(navCollapsed)return;openGroups[b.dataset.grp]=!(openGroups[b.dataset.grp]!==false);try{localStorage.setItem('dispatch.groups',JSON.stringify(openGroups))}catch(_){ }renderNav();return}
-  if(b.dataset.tab){S.tab=b.dataset.tab;try{localStorage.setItem('dispatch.tab',S.tab)}catch(_){ }setNavOpen(false);render();$('.shell>main').scrollTo({top:0});window.scrollTo({top:0});return}
+  if(b.dataset.tab){S.tab=b.dataset.tab;if(S.tab==='monthly')RP.loadedKey='';try{localStorage.setItem('dispatch.tab',S.tab)}catch(_){ }setNavOpen(false);render();$('.shell>main').scrollTo({top:0});window.scrollTo({top:0});return}
   if(b.dataset.member){openMember(S.members.find(m=>m.email===b.dataset.member));return}
   if(b.dataset.role){openRole(roleById(b.dataset.role));return}
   if(b.dataset.group){openGroup(groupById(b.dataset.group));return}
