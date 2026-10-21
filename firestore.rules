@@ -1,25 +1,40 @@
+// Firestore 資料庫安全規則（重要：此檔案不會隨 GitHub Pages 自動發布）
+// 修改後請到 Firebase Console → Firestore Database → 規則，貼上並按「發布」。
+// accessUsers/{小寫Email}：使用者對應的角色；accessRoles/{角色ID}：角色權限。
+// 初始管理員 Email 是啟用用的固定帳號；更換前應同步檢查前端及資料庫規則。
+// 前端隱藏按鈕不是安全措施；真正的讀寫限制由下列規則判斷。
 rules_version = '2';
-// 誰可以讀寫派車資料：只有下面名單裡的 Google 帳號（Gmail）。
-// 新增或移除人員：修改 allowList()，然後在 Firebase 主控台按「發布」。
 service cloud.firestore {
-  match /databases/{database}/documents {
-
-    function allowList() {
-      return [
-        "你的帳號@gmail.com",
-        // "同事A@gmail.com",
-        // "同事B@gmail.com",
-      ];
-    }
-
-    function isStaff() {
-      return request.auth != null
-        && request.auth.token.email_verified == true
-        && request.auth.token.email.lower() in allowList();
-    }
-
-    match /vehicles/{id}  { allow read, write: if isStaff(); }
-    match /customers/{id} { allow read, write: if isStaff(); }
-    match /trips/{id}     { allow read, write: if isStaff(); }
+ match /databases/{database}/documents {
+  // 僅接受已驗證 Email 的 Google/Firebase 登入使用者。
+  function signed() {return request.auth != null && request.auth.token.email_verified == true;}
+  function email() {return request.auth.token.email.lower();}
+  // 初始管理員：避免首次設定時因尚無使用者資料而無法進入。
+  function bootstrap() {return signed() && email() == 'syujan27@gmail.com';}
+  function userDoc() {return get(/databases/$(database)/documents/accessUsers/$(email()));}
+  function staff() {return signed() && (bootstrap() || exists(/databases/$(database)/documents/accessUsers/$(email())));}
+  function roleId() {return bootstrap() ? 'admin' : userDoc().data.role;}
+  function admin() {return bootstrap() || (staff() && roleId() == 'admin');}
+  function leader() {return staff() && (admin() || roleId() == 'leader');}
+  function roleDoc() {return get(/databases/$(database)/documents/accessRoles/$(roleId()));}
+  // 依角色判斷功能權限；內建角色在尚未建立設定文件時採預設權限。
+  function permitted(p) {return staff() && (admin() || (roleId() == 'leader' && (p == 'manage' || !exists(/databases/$(database)/documents/accessRoles/leader))) || (roleId() == 'member' && !exists(/databases/$(database)/documents/accessRoles/member) && p in ['dash','trips','customers','vehicles','editTrips']) || (exists(/databases/$(database)/documents/accessRoles/$(roleId())) && p in roleDoc().data.permissions));}
+  // 使用者清單：組長不能授予管理員角色，也不能修改既有管理員。
+  match /accessUsers/{id} {
+   allow read: if staff();
+   allow create, update: if leader() && id == id.lower() && request.resource.data.keys().hasOnly(['role']) && request.resource.data.role is string && (request.resource.data.role in ['admin','leader','member'] || exists(/databases/$(database)/documents/accessRoles/$(request.resource.data.role))) && (admin() || (request.resource.data.role != 'admin' && (!exists(/databases/$(database)/documents/accessUsers/$(id)) || resource.data.role != 'admin'))) && (id != 'syujan27@gmail.com' || request.resource.data.role == 'admin');
+   allow delete: if leader() && id != 'syujan27@gmail.com' && (admin() || resource.data.role != 'admin');
   }
+  // 角色設定：只有系統管理員可以建立或調整角色權限。
+  match /accessRoles/{id} {
+   allow read: if staff();
+   allow create, update: if admin() && id != 'admin' && request.resource.data.keys().hasOnly(['name','permissions']) && request.resource.data.name is string && request.resource.data.permissions is list && request.resource.data.permissions.hasOnly(['dash','trips','customers','vehicles','settings','editTrips','deleteTrips','editCustomers','editVehicles','export','import','manage']) && (id != 'leader' || 'manage' in request.resource.data.permissions);
+   allow delete: if false;
+  }
+  // 業務資料：依權限分開判斷讀取、新增修改與刪除。
+  match /vehicles/{id} {allow read: if permitted('vehicles');allow write: if permitted('editVehicles');}
+  match /customers/{id} {allow read: if permitted('customers');allow write: if permitted('editCustomers');}
+  match /trips/{id} {allow read: if permitted('trips') || permitted('dash');allow create, update: if permitted('editTrips');allow delete: if permitted('deleteTrips');}
+  match /tripTypes/{id} {allow read: if staff();allow write: if permitted('settings');}
+ }
 }
