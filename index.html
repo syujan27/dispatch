@@ -483,7 +483,7 @@ function render(){
   if(S.tab==='vehicles')renderVeh();
   if(S.tab==='settings'){renderTypes();aclRender();}
   document.querySelectorAll('#tabs button').forEach(b=>{b.hidden=S.aclReady&&!can(b.dataset.tab)});
-  if(S.aclReady&&!can(S.tab)){S.tab=can('dash')?'dash':can('trips')?'trips':'settings';}
+  if(S.aclReady&&!can(S.tab)){S.tab=can('dash')?'dash':can('trips')?'trips':can('vehicles')?'vehicles':can('customers')?'customers':'settings';render();return;}
 }
 
 function typePill(t){return `<span class="pill tt" style="${tc(t)}">${esc(typeLabel(t))}</span>`}
@@ -748,7 +748,7 @@ function aclRender(){
 $('#aclUserForm').addEventListener('submit',async e=>{
  e.preventDefault();if(!isManager())return;
  const email=$('#aclEmail').value.trim().toLowerCase(),r=$('#aclUserRole').value;
- if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return toast('Email 格式不正確');
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return toast('Email 格式不正確');
  if(r==='admin'&&myRole()!=='admin')return toast('只有管理員能指定系統管理員');
  if(email==='syujan27@gmail.com'&&r!=='admin')return toast('不可變更初始管理員');
  const existing=S.aclUsers.find(x=>x.id===email);if(existing?.role==='admin'&&myRole()!=='admin')return toast('不可修改管理員');
