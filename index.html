@@ -552,13 +552,14 @@ function makeQuery(q){
     onSnapshot(next, err){ return fsOnSnapshot(q, next, err); },
   };
 }
+const wrapDoc=x=>({id:x.id,exists:typeof x.exists==='function'?x.exists():!!x.exists,data:()=>x.data(),metadata:x.metadata||{}});
 function makeDb(){
   return {
     collection(name){
       const ref = fsCollection(fs, name);
       return Object.assign(makeQuery(ref), {
         doc(id){ const d = id ? fsDoc(fs, name, id) : fsDoc(ref);
-          return { id: d.id, set: data => setDoc(d, data), delete: () => deleteDoc(d), get: () => getDoc(d), onSnapshot: (n,e) => fsOnSnapshot(d, n, e) }; },
+          return { id: d.id, set: data => setDoc(d, data), delete: () => deleteDoc(d), get: () => getDoc(d).then(wrapDoc), onSnapshot: (n,e) => fsOnSnapshot(d, x => n(wrapDoc(x)), e) }; },
       });
     },
   };
@@ -1166,11 +1167,13 @@ function onDbErr(e){
 }
 let unsubs=[],dataOn=false,mgrOn=false;
 function stopAll(){unsubs.forEach(u=>u());unsubs=[];unsubTrips?.();unsubTrips=null;dataOn=false;mgrOn=false}
-function denyLogin(msg){$('#loginMsg').textContent=msg;signOut(auth)}
+function setGate(t){const g=$('#gate');if(S.authz==='checking'){g.hidden=false;g.textContent=t}}
+function denyLogin(msg){clearTimeout(boot.slow);$('#loginMsg').textContent=msg;signOut(auth)}
 async function bootstrapOwner(user){
   // Only succeeds for owners listed in the Firestore rules (ownerList).
+  setGate('第一次登入，正在建立預設角色…');
   const rs=await db.collection('roles').get();
-  if(rs.empty){for(const r of DEFAULT_ROLES){const{id,...rest}=r;await db.collection('roles').doc(id).set(rest)}}
+  if(rs.empty)await Promise.all(DEFAULT_ROLES.map(r=>{const{id,...rest}=r;return db.collection('roles').doc(id).set(rest)}));
   await db.collection('members').doc(S.email).set({email:S.email,name:user.displayName||'',roleId:'admin',groupId:'',active:true,updatedAt:new Date().toISOString()});
 }
 function startData(){
@@ -1204,13 +1207,22 @@ function boot(){
     db=makeDb();S.live=true;S.email=(user.email||'').toLowerCase();S.authz='checking';render();
     $('#whoami').textContent='· '+S.email;
     ['exportBtn','importLbl','logoutBtn'].forEach(id=>$('#'+id).hidden=false);
-    let tried=false;
+    let tried=false,busy=false;
+    clearTimeout(boot.slow);
+    boot.slow=setTimeout(()=>setGate('確認權限花了比平常久。請確認：① Firebase 規則已按「發布」 ② 規則裡的 Gmail 與登入帳號相同（全部小寫） ③ 網路正常。可以按 Ctrl+F5 重新整理再試一次。'),12000);
     unsubs.push(db.collection('members').doc(S.email).onSnapshot(async snap=>{
       if(!snap.exists){
-        if(!tried){tried=true;try{await bootstrapOwner(user);return}catch(e){}}
+        if(snap.metadata.fromCache||busy)return;
+        if(!tried){tried=true;busy=true;
+          try{await bootstrapOwner(user);busy=false;return}
+          catch(e){busy=false;
+            if(e&&e.code&&e.code!=='permission-denied'){denyLogin('建立管理員資料失敗：'+e.code);return}
+          }
+        }
         denyLogin(`${S.email} 還沒有開通，請系統管理員或經理在「權限管理」加入你的 Gmail。`);return;
       }
-      const m=snap.data();
+      clearTimeout(boot.slow);
+      const m=snap.data()||{};
       if(m.active===false){denyLogin('你的帳號已被停用，請聯絡系統管理員。');return}
       S.me={...m,email:S.email};S.authz='ok';
       $('#syncState').textContent='已連線 · 資料即時同步';
