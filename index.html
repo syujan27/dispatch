@@ -55,7 +55,8 @@ header.top .wrap{display:flex;align-items:center;justify-content:space-between;g
 /* side navigation */
 .menu-btn{display:none;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;width:40px;height:40px;cursor:pointer;align-items:center;justify-content:center}
 .menu-btn svg{width:20px;height:20px}
-.shell{display:flex;align-items:flex-start;max-width:1520px;margin:0 auto}
+.shell{display:flex;align-items:flex-start;width:100%}
+header.top .wrap{max-width:none}
 .shell > main{flex:1 1 auto;min-width:0;max-width:none;margin:0}
 .side{flex:0 0 auto;width:236px;position:sticky;top:env(safe-area-inset-top,0px);max-height:100vh;overflow-y:auto;padding:18px 10px 18px max(12px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:4px;transition:width .18s ease}
 .side[hidden]{display:none!important}
@@ -73,23 +74,33 @@ header.top .wrap{display:flex;align-items:center;justify-content:space-between;g
 .nav-item:hover{background:var(--surface-2)}
 .nav-item[aria-current="page"]{background:color-mix(in srgb,var(--ocean) 14%,transparent);color:var(--ocean);font-weight:600}
 .nav-item[aria-current="page"] svg{opacity:1}
-.collapse-btn{margin-top:auto;display:flex;align-items:center;gap:10px;background:transparent;border:1px solid var(--line);border-radius:9px;padding:8px 10px;cursor:pointer;color:var(--muted);font-size:13px}
-.collapse-btn svg{width:16px;height:16px;transition:transform .15s}
+.rail{position:relative;flex:0 0 0;width:0;z-index:5}
+.collapse-btn{position:absolute;left:-13px;top:22px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;padding:0;background:var(--surface);border:1px solid var(--line);color:var(--muted);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.collapse-btn:hover{color:var(--ocean);border-color:var(--ocean)}
+.collapse-btn svg{width:14px;height:14px;transition:transform .15s}
 body.nav-collapsed .side{width:68px}
 body.nav-collapsed .side .lbl,body.nav-collapsed .side .who,body.nav-collapsed .nav-grp .chev{display:none}
 body.nav-collapsed .nav-grp{justify-content:center;padding:6px 0;font-size:0}
 body.nav-collapsed .nav-grp::before{content:"";display:block;width:24px;border-top:1px solid var(--line)}
 body.nav-collapsed .nav-sub[hidden]{display:flex!important}
 body.nav-collapsed .nav-item{justify-content:center;padding:10px 0}
-body.nav-collapsed .collapse-btn{justify-content:center}
 body.nav-collapsed .collapse-btn svg{transform:rotate(180deg)}
 .scrim{display:none}
+.side{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+@media (min-width:861px){
+  html,body{height:100%}
+  body{display:flex;flex-direction:column;overflow:hidden}
+  header.top{flex:0 0 auto;z-index:20}
+  .shell{flex:1 1 auto;min-height:0;align-items:stretch}
+  .side{position:relative;top:auto;max-height:none;height:100%;border-right:1px solid var(--line)}
+  .shell>main{height:100%;overflow-y:auto;scrollbar-gutter:stable}
+}
 @media (max-width:860px){
   .menu-btn{display:inline-flex}
   .side{position:fixed;z-index:30;left:0;top:0;bottom:0;max-height:none;width:264px;background:var(--surface);border-right:1px solid var(--line);transform:translateX(-102%);transition:transform .2s ease;padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
   body.nav-open .side{transform:none;box-shadow:0 10px 40px rgba(0,0,0,.25)}
   body.nav-open .scrim{display:block;position:fixed;inset:0;z-index:25;background:color-mix(in srgb,#04161c 45%,transparent)}
-  .collapse-btn{display:none}
+  .rail{display:none}
   body.nav-collapsed .side{width:264px}
   body.nav-collapsed .side .lbl,body.nav-collapsed .side .who{display:revert}
   body.nav-collapsed .nav-item{justify-content:flex-start;padding:9px 10px 9px 14px}
@@ -252,8 +263,8 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
 <div class="shell">
 <aside class="side" id="side" hidden aria-label="主選單">
   <nav id="nav"></nav>
-  <button class="collapse-btn" id="collapseBtn" aria-label="收合選單"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><span class="lbl">收合選單</span></button>
 </aside>
+<div class="rail" id="rail" hidden><button class="collapse-btn" id="collapseBtn" aria-label="收合選單" title="收合選單"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button></div>
 <div class="scrim" id="scrim"></div>
 <main class="wrap">
   <div id="banner" class="banner" hidden></div>
@@ -636,7 +647,7 @@ try{navCollapsed=localStorage.getItem('dispatch.nav')==='1';const og=JSON.parse(
 document.body.classList.toggle('nav-collapsed',navCollapsed);
 function renderNav(){
   const keys=allowedKeys();
-  $('#side').hidden=!(S.authz==='ok');$('#menuBtn').hidden=!(S.authz==='ok');
+  $('#side').hidden=!(S.authz==='ok');$('#rail').hidden=!(S.authz==='ok');$('#menuBtn').hidden=!(S.authz==='ok');
   const r=myRole();
   $('#userBox').hidden=!(S.authz==='ok');
   $('#userName').textContent=S.me?.name||S.email||'—';
@@ -1094,13 +1105,13 @@ $('#userLogout').onclick=()=>{setUserMenu(false);signOut(auth)};
 function setNavOpen(o){document.body.classList.toggle('nav-open',o)}
 $('#menuBtn').onclick=()=>setNavOpen(true);
 $('#scrim').onclick=()=>setNavOpen(false);
-$('#collapseBtn').onclick=()=>{navCollapsed=!navCollapsed;document.body.classList.toggle('nav-collapsed',navCollapsed);$('#collapseBtn').setAttribute('aria-label',navCollapsed?'展開選單':'收合選單');try{localStorage.setItem('dispatch.nav',navCollapsed?'1':'0')}catch(e){}};
+$('#collapseBtn').onclick=()=>{navCollapsed=!navCollapsed;document.body.classList.toggle('nav-collapsed',navCollapsed);$('#collapseBtn').setAttribute('aria-label',navCollapsed?'展開選單':'收合選單');$('#collapseBtn').title=navCollapsed?'展開選單':'收合選單';try{localStorage.setItem('dispatch.nav',navCollapsed?'1':'0')}catch(e){}};
 
 /* ---------- events ---------- */
 document.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.grp){if(navCollapsed)return;openGroups[b.dataset.grp]=!(openGroups[b.dataset.grp]!==false);try{localStorage.setItem('dispatch.groups',JSON.stringify(openGroups))}catch(_){ }renderNav();return}
-  if(b.dataset.tab){S.tab=b.dataset.tab;try{localStorage.setItem('dispatch.tab',S.tab)}catch(_){ }setNavOpen(false);render();window.scrollTo({top:0});return}
+  if(b.dataset.tab){S.tab=b.dataset.tab;try{localStorage.setItem('dispatch.tab',S.tab)}catch(_){ }setNavOpen(false);render();$('.shell>main').scrollTo({top:0});window.scrollTo({top:0});return}
   if(b.dataset.member){openMember(S.members.find(m=>m.email===b.dataset.member));return}
   if(b.dataset.role){openRole(roleById(b.dataset.role));return}
   if(b.dataset.group){openGroup(groupById(b.dataset.group));return}
