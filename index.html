@@ -36,7 +36,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--ocean);outline-offset:2px}
 
 header.top{background:var(--head);color:var(--head-ink);position:relative}
-header.top .wrap{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:20px 30px}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:20px 30px}
 .brand h1{font-family:var(--f-display);font-size:26px;margin:0;letter-spacing:.06em;text-wrap:balance}
 .brand p{margin:2px 0 0;font-size:12px;letter-spacing:.18em;opacity:.75}
 .brand{position:relative}
@@ -52,10 +52,77 @@ header.top .wrap{display:flex;align-items:flex-end;justify-content:space-between
 @media (max-width:640px){.brand{width:100%}.brand p .en{display:block}.brand p .dot{display:none}.brand p{letter-spacing:.12em}.gulls{left:auto;right:-8px;top:-14px;margin:0;transform:scale(.75);transform-origin:right top}}
 .wave{position:absolute;left:0;right:0;bottom:-1px;height:16px;display:block;width:100%}
 .wave path{fill:var(--bg)}
-nav.tabs{display:flex;gap:4px;flex-wrap:wrap}
-nav.tabs button{background:transparent;border:1px solid transparent;color:var(--head-ink);padding:7px 14px;border-radius:999px;cursor:pointer;opacity:.8;font-weight:500}
-nav.tabs button:hover{opacity:1;border-color:color-mix(in srgb,var(--head-ink) 30%,transparent)}
-nav.tabs button[aria-selected="true"]{background:var(--head-ink);color:var(--head);opacity:1}
+/* side navigation */
+.menu-btn{display:none;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;width:40px;height:40px;cursor:pointer;align-items:center;justify-content:center}
+.menu-btn svg{width:20px;height:20px}
+.shell{display:flex;align-items:flex-start;max-width:1520px;margin:0 auto}
+.shell > main{flex:1 1 auto;min-width:0;max-width:none;margin:0}
+.side{flex:0 0 auto;width:236px;position:sticky;top:env(safe-area-inset-top,0px);max-height:100vh;overflow-y:auto;padding:18px 10px 18px max(12px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:4px;transition:width .18s ease}
+.side[hidden]{display:none!important}
+.side .who{padding:8px 10px 12px;border-bottom:1px solid var(--line);margin-bottom:8px;min-width:0}
+.side .who b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side .who span{font-size:12px;color:var(--muted)}
+.nav-grp{display:flex;align-items:center;gap:10px;width:100%;background:transparent;border:0;padding:9px 10px;border-radius:9px;cursor:pointer;color:var(--muted);font-size:12px;letter-spacing:.14em;font-weight:500;text-align:left}
+.nav-grp:hover{background:var(--surface-2);color:var(--ink)}
+.nav-grp .chev{margin-left:auto;width:14px;height:14px;transition:transform .15s}
+.nav-grp[aria-expanded="false"] .chev{transform:rotate(-90deg)}
+.nav-sub{display:flex;flex-direction:column;gap:2px;margin:0 0 8px}
+.nav-sub[hidden]{display:none!important}
+.nav-item{display:flex;align-items:center;gap:11px;width:100%;background:transparent;border:0;border-radius:9px;padding:9px 10px 9px 14px;cursor:pointer;color:var(--ink);font-size:14px;text-align:left;white-space:nowrap}
+.nav-item svg{width:18px;height:18px;flex:0 0 18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+.nav-item:hover{background:var(--surface-2)}
+.nav-item[aria-current="page"]{background:color-mix(in srgb,var(--ocean) 14%,transparent);color:var(--ocean);font-weight:600}
+.nav-item[aria-current="page"] svg{opacity:1}
+.collapse-btn{margin-top:auto;display:flex;align-items:center;gap:10px;background:transparent;border:1px solid var(--line);border-radius:9px;padding:8px 10px;cursor:pointer;color:var(--muted);font-size:13px}
+.collapse-btn svg{width:16px;height:16px;transition:transform .15s}
+body.nav-collapsed .side{width:68px}
+body.nav-collapsed .side .lbl,body.nav-collapsed .side .who,body.nav-collapsed .nav-grp .chev{display:none}
+body.nav-collapsed .nav-grp{justify-content:center;padding:6px 0;font-size:0}
+body.nav-collapsed .nav-grp::before{content:"";display:block;width:24px;border-top:1px solid var(--line)}
+body.nav-collapsed .nav-sub[hidden]{display:flex!important}
+body.nav-collapsed .nav-item{justify-content:center;padding:10px 0}
+body.nav-collapsed .collapse-btn{justify-content:center}
+body.nav-collapsed .collapse-btn svg{transform:rotate(180deg)}
+.scrim{display:none}
+@media (max-width:860px){
+  .menu-btn{display:inline-flex}
+  .side{position:fixed;z-index:30;left:0;top:0;bottom:0;max-height:none;width:264px;background:var(--surface);border-right:1px solid var(--line);transform:translateX(-102%);transition:transform .2s ease;padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+  body.nav-open .side{transform:none;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+  body.nav-open .scrim{display:block;position:fixed;inset:0;z-index:25;background:color-mix(in srgb,#04161c 45%,transparent)}
+  .collapse-btn{display:none}
+  body.nav-collapsed .side{width:264px}
+  body.nav-collapsed .side .lbl,body.nav-collapsed .side .who{display:revert}
+  body.nav-collapsed .nav-item{justify-content:flex-start;padding:9px 10px 9px 14px}
+  body.nav-collapsed .nav-grp{justify-content:flex-start;padding:9px 10px;font-size:12px}
+  body.nav-collapsed .nav-grp::before{display:none}
+}
+.head-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.user{position:relative}
+.user-chip{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:5px 12px 5px 5px;cursor:pointer;text-align:left;max-width:280px}
+.user-chip:hover{border-color:var(--ocean)}
+.avatar{flex:0 0 34px;width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,var(--ocean) 16%,var(--surface));display:grid;place-items:center}
+.avatar svg{width:22px;height:22px;fill:none;stroke:var(--ocean);stroke-width:1.8;stroke-linecap:round}
+.u-txt{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.u-txt b{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u-txt small{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u-chev{width:14px;height:14px;opacity:.7;flex:0 0 14px}
+.user-menu{position:absolute;right:0;top:calc(100% + 8px);z-index:35;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;min-width:220px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+.um-email{padding:8px 10px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:4px;overflow-wrap:anywhere}
+.um-item{display:block;width:100%;text-align:left;background:transparent;border:0;border-radius:8px;padding:8px 10px;cursor:pointer}
+.um-item:hover{background:var(--surface-2)}
+.um-name{display:none;padding:8px 10px 0;font-weight:600}.um-name small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+@media (max-width:640px){.u-txt,.u-chev{display:none}.user-chip{padding:3px}.um-name{display:block}.um-email{padding-top:2px}}
+.page-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0 14px}
+.page-h h2{font-family:var(--f-display);font-size:22px;margin:0;letter-spacing:.04em}
+.page-h .crumb{color:var(--muted);font-size:13px}
+/* permission matrix */
+.matrix td,.matrix th{text-align:center}
+.matrix td:first-child,.matrix th:first-child{text-align:left}
+.matrix input[type=checkbox]{width:18px;height:18px;accent-color:var(--ocean);cursor:pointer}
+.matrix input[disabled]{cursor:not-allowed;opacity:.6}
+.matrix th.mgr{border-left:2px solid var(--line)} .matrix td.mgr{border-left:2px solid var(--line)}
+.mods{display:flex;flex-wrap:wrap;gap:4px}
+.gate{padding:60px 16px;text-align:center;color:var(--muted)}
 
 .banner{margin-top:14px;padding:10px 14px;border-radius:10px;background:var(--sand);font-size:13px}
 .datebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 14px}
@@ -167,12 +234,6 @@ dialog form{display:flex;flex-direction:column;max-height:calc(100vh - 34px)}
 .toast.show{opacity:1}
 footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-
-/* 權限頁：沿用原介面的海洋色系、表格與圓角，窄螢幕將編輯區移到清單上方。 */
-.acl-tabs{display:flex;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
-.acl-tabs [aria-selected=true]{background:var(--surface-2);border-color:var(--ocean);color:var(--ocean)}
-.acl-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px}.acl-main{min-width:0;padding:16px}.acl-main .stats{margin-bottom:14px}.acl-main table{min-width:560px}.acl-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.acl-filters input{flex:1;min-width:180px}.acl-filters input,input[type=email]{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}.acl-editor{border-left:1px solid var(--line);padding:16px;background:var(--surface)}.acl-editor-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}.acl-editor h3{margin:0;font-family:var(--f-display);font-size:17px}.acl-editor form{display:flex;flex-direction:column;gap:16px}.acl-editor label{display:flex;flex-direction:column;gap:7px;font-size:13px}.acl-help{font-size:12px;line-height:1.8;margin:0}.acl-summary{font-size:12px;padding:12px;background:var(--surface-2);border-radius:8px}.acl-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}.acl-pagination{display:flex;align-items:center;gap:12px;padding-top:16px;font-size:12px}.acl-perm-group{margin:0 0 14px;padding:12px;border:1px solid var(--line);border-radius:8px}.acl-perm-group legend{color:var(--muted);font-size:12px}.acl-perm-group label{flex-direction:row;align-items:center;margin:8px 0}.acl-selected{background:var(--surface-2)}.acl-email{overflow-wrap:anywhere}.acl-layout:has(.acl-editor[hidden]){grid-template-columns:1fr}
-@media(max-width:900px){.acl-layout{grid-template-columns:1fr}.acl-editor{border-left:0;border-bottom:1px solid var(--line);grid-row:1}.acl-main .stat{padding:10px}.acl-editor form{max-width:600px}.acl-main table{min-width:520px}}
 </style>
 </head>
 <body>
@@ -184,19 +245,32 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
       <p><span class="en">DAILY DISPATCH<span class="dot"> · </span></span><span>北海之真情 · · 與您共享旅遊的歡愉</span></p>
       <div class="gulls" aria-hidden="true"><span class="g1"><svg viewBox="0 0 64 26" aria-hidden="true"><path class="g-w" d="M2 13 C10 4 21 2 29 11 L32 14 L35 11 C43 2 54 4 62 13 C52 8 43 9 36 16 L32 19 L28 16 C21 9 12 8 2 13Z"/><path class="g-t" d="M2 13 C5 10 8 8.5 11 8 C9 9.5 7.5 10.5 6 12 Z M62 13 C59 10 56 8.5 53 8 C55 9.5 56.5 10.5 58 12 Z"/></svg></span><span class="g2"><svg viewBox="0 0 64 26" aria-hidden="true"><path class="g-w" d="M2 13 C10 4 21 2 29 11 L32 14 L35 11 C43 2 54 4 62 13 C52 8 43 9 36 16 L32 19 L28 16 C21 9 12 8 2 13Z"/><path class="g-t" d="M2 13 C5 10 8 8.5 11 8 C9 9.5 7.5 10.5 6 12 Z M62 13 C59 10 56 8.5 53 8 C55 9.5 56.5 10.5 58 12 Z"/></svg></span><span class="g3"><svg viewBox="0 0 64 26" aria-hidden="true"><path class="g-w" d="M2 13 C10 4 21 2 29 11 L32 14 L35 11 C43 2 54 4 62 13 C52 8 43 9 36 16 L32 19 L28 16 C21 9 12 8 2 13Z"/><path class="g-t" d="M2 13 C5 10 8 8.5 11 8 C9 9.5 7.5 10.5 6 12 Z M62 13 C59 10 56 8.5 53 8 C55 9.5 56.5 10.5 58 12 Z"/></svg></span></div>
     </div>
-    <nav class="tabs" role="tablist" id="tabs">
-      <button role="tab" data-tab="dash" aria-selected="true">儀表板</button>
-      <button role="tab" data-tab="trips" aria-selected="false">車趟</button>
-      <button role="tab" data-tab="customers" aria-selected="false">客戶</button>
-      <button role="tab" data-tab="vehicles" aria-selected="false">車輛</button>
-      <button role="tab" data-tab="settings" aria-selected="false">設定</button>
-    </nav>
   </div>
   <svg class="wave" viewBox="0 0 1200 16" preserveAspectRatio="none" aria-hidden="true"><path d="M0 10 C 100 2, 200 2, 300 9 S 500 16, 600 9 S 800 2, 900 9 S 1100 16, 1200 8 V16 H0Z"/></svg>
 </header>
 
+<div class="shell">
+<aside class="side" id="side" hidden aria-label="主選單">
+  <nav id="nav"></nav>
+  <button class="collapse-btn" id="collapseBtn" aria-label="收合選單"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><span class="lbl">收合選單</span></button>
+</aside>
+<div class="scrim" id="scrim"></div>
 <main class="wrap">
   <div id="banner" class="banner" hidden></div>
+  <div class="page-h" id="pageH"><button class="menu-btn" id="menuBtn" aria-label="開啟選單" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><h2 id="pageTitle">儀表板</h2><span class="crumb" id="pageCrumb">派車作業</span><span class="spacer"></span>
+      <div class="user" id="userBox" hidden>
+        <button class="user-chip" id="userChip" aria-haspopup="true" aria-expanded="false">
+          <span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="4"/><path d="M4 20.5c1.2-4 4.3-6 8-6s6.8 2 8 6"/></svg></span>
+          <span class="u-txt"><b id="userName">—</b><small id="userRole"></small></span>
+          <svg class="u-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="user-menu" id="userMenu" hidden>
+          <div class="um-name" id="userMenuName"></div><div class="um-email" id="userEmail"></div>
+          <button class="um-item" id="userLogout">登出</button>
+        </div>
+      </div>
+  </div>
+  <div class="gate" id="gate" hidden></div>
 
   <div class="datebar" id="datebar">
     <button class="iconbtn" id="prevDay" aria-label="前一天">‹</button>
@@ -250,18 +324,31 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
     </section>
   </div>
 
-  <div id="view-settings" hidden>
-    <!-- 權限管理沿用全站配色；清單與編輯區分開，輸入內容不隨即時同步重繪。 -->
-    <section class="panel" id="aclPanel" hidden>
-      <div class="panel-h"><div><h2>權限管理</h2><span class="sub">管理 Google 登入帳號，以及各角色可使用的功能</span></div><span class="spacer"></span><button class="btn primary" id="aclAdd">＋ 新增使用者</button></div>
-      <div class="acl-tabs" role="tablist" aria-label="權限管理分類"><button class="btn" data-acl-tab="users" role="tab" aria-selected="true">使用者權限</button><button class="btn ghost" data-acl-tab="roles" role="tab" aria-selected="false">角色管理</button></div>
-      <div class="acl-layout"><div class="acl-main"><div class="stats" id="aclStats"></div><div class="acl-filters"><input type="search" id="aclSearch" placeholder="搜尋 Email 或角色名稱" aria-label="搜尋使用者或角色"><select id="aclFilter" aria-label="篩選角色"></select><span class="muted" id="aclCount" aria-live="polite"></span></div><div class="tbl-wrap"><table id="aclUsers"></table></div><div class="acl-pagination"><span id="aclPageInfo" class="muted"></span><span class="spacer"></span><button class="btn sm" id="aclPrev" aria-label="上一頁">‹</button><span id="aclPage"></span><button class="btn sm" id="aclNext" aria-label="下一頁">›</button></div></div>
-      <aside class="acl-editor" id="aclEditor" hidden><div class="acl-editor-head"><h3 id="aclEditorTitle">新增使用者</h3><button class="btn sm ghost" id="aclClose" aria-label="關閉編輯區">✕</button></div><form id="aclUserForm"><label>Google Email<input type="email" id="aclEmail" required placeholder="name@gmail.com" autocomplete="off"></label><label>角色<select id="aclUserRole"></select></label><p class="muted acl-help">加入後，使用者即可用這個 Google 帳號登入。功能存取範圍依角色設定。</p><div id="aclUserSummary" class="acl-summary"></div><div class="acl-actions"><button type="button" class="btn" id="aclCancel">取消</button><button class="btn primary">儲存變更</button></div></form>
-      <form id="aclRoleForm" hidden><label>角色名稱<input id="aclNewRole" required maxlength="30" placeholder="例如：調度人員"></label><div id="aclRoles"></div><p id="aclRoleHint" class="muted acl-help"></p><div class="acl-actions"><button type="button" class="btn" id="aclRoleCancel">取消</button><button class="btn primary" id="aclRoleSave">儲存變更</button></div></form></aside></div>
-    </section>
+  <div id="view-tripTypes" hidden>
     <section class="panel">
       <div class="panel-h"><h2>車趟類型</h2><span class="sub">新增、改名、換顏色或調整順序；停用後不會出現在新增選單，舊資料照常顯示</span><span class="spacer"></span><button class="btn primary" id="addType">＋ 新增類型</button></div>
       <div class="tbl-wrap"><table id="typeTbl"></table></div>
+    </section>
+  </div>
+
+  <div id="view-members" hidden>
+    <section class="panel">
+      <div class="panel-h"><h2>人員與權限</h2><span class="sub">名單內的 Gmail 才能登入；能看到哪些功能由「角色」決定</span><span class="spacer"></span><button class="btn primary" id="addMember">＋ 新增人員</button></div>
+      <div class="tbl-wrap"><table id="memberTbl"></table></div>
+    </section>
+  </div>
+
+  <div id="view-roles" hidden>
+    <section class="panel">
+      <div class="panel-h"><h2>角色與可瀏覽功能</h2><span class="sub">勾選即儲存；「權限管理」代表可管理人員、角色、群組</span><span class="spacer"></span><button class="btn primary" id="addRole">＋ 新增角色</button></div>
+      <div class="tbl-wrap"><table id="roleTbl" class="matrix"></table></div>
+    </section>
+  </div>
+
+  <div id="view-groups" hidden>
+    <section class="panel">
+      <div class="panel-h"><h2>群組（部門／小組）</h2><span class="sub">用來分類人員，例如調度組、業務組</span><span class="spacer"></span><button class="btn primary" id="addGroup">＋ 新增群組</button></div>
+      <div class="tbl-wrap"><table id="groupTbl"></table></div>
     </section>
   </div>
 
@@ -275,6 +362,7 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
     <button class="btn sm ghost" id="logoutBtn" hidden>登出</button>
   </footer>
 </main>
+</div>
 
 <!-- Trip dialog -->
 <dialog id="tripDlg">
@@ -346,6 +434,66 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
   </form>
 </dialog>
 
+<!-- Member dialog -->
+<dialog id="memberDlg">
+  <form method="dialog" id="memberForm">
+    <div class="dlg-h" id="memberDlgTitle">新增人員</div>
+    <div class="dlg-b">
+      <label class="full">Gmail<input type="text" id="mf-email" required placeholder="name@gmail.com" autocomplete="off" inputmode="email"></label>
+      <label class="full">姓名<input type="text" id="mf-name" placeholder="例：王小明"></label>
+      <label>角色<select id="mf-role"></select></label>
+      <label>群組<select id="mf-group"></select></label>
+      <label class="full chk"><input type="checkbox" id="mf-active" checked> 啟用（取消勾選後，這個人就不能登入）</label>
+      <div class="warnline" id="mf-warn"></div>
+    </div>
+    <div class="dlg-f">
+      <button type="button" class="btn danger" id="mf-del" hidden>刪除</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>取消</button>
+      <button type="submit" class="btn primary">儲存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Role dialog -->
+<dialog id="roleDlg">
+  <form method="dialog" id="roleForm">
+    <div class="dlg-h" id="roleDlgTitle">新增角色</div>
+    <div class="dlg-b">
+      <label class="full">角色名稱<input type="text" id="rf-name" required placeholder="例：會計"></label>
+      <label>排序（數字小的在前）<input type="number" id="rf-order" inputmode="numeric"></label>
+      <label class="chk" style="align-self:end"><input type="checkbox" id="rf-manage"> 可管理權限</label>
+      <div class="full muted" style="grid-column:1/-1;font-size:13px">可瀏覽的功能，存檔後在角色表格中勾選。</div>
+      <div class="warnline" id="rf-warn"></div>
+    </div>
+    <div class="dlg-f">
+      <button type="button" class="btn danger" id="rf-del" hidden>刪除</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>取消</button>
+      <button type="submit" class="btn primary">儲存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Group dialog -->
+<dialog id="groupDlg">
+  <form method="dialog" id="groupForm">
+    <div class="dlg-h" id="groupDlgTitle">新增群組</div>
+    <div class="dlg-b">
+      <label class="full">群組名稱<input type="text" id="gf-name" required placeholder="例：調度組"></label>
+      <label>排序<input type="number" id="gf-order" inputmode="numeric"></label>
+      <label>備註<input type="text" id="gf-note"></label>
+      <div class="warnline" id="gf-warn"></div>
+    </div>
+    <div class="dlg-f">
+      <button type="button" class="btn danger" id="gf-del" hidden>刪除</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>取消</button>
+      <button type="submit" class="btn primary">儲存</button>
+    </div>
+  </form>
+</dialog>
+
 <!-- Trip type dialog -->
 <dialog id="typeDlg">
   <form method="dialog" id="typeForm">
@@ -388,7 +536,7 @@ label.btn{display:inline-block}
 /* Firebase SDK (pinned version). Your project settings live in firebase-config.js */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection as fsCollection, doc as fsDoc, query as fsQuery, where as fsWhere,
-  onSnapshot as fsOnSnapshot, getDocs, setDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  onSnapshot as fsOnSnapshot, getDocs, getDoc, setDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { firebaseConfig } from "./firebase-config.js";
 
@@ -410,7 +558,7 @@ function makeDb(){
       const ref = fsCollection(fs, name);
       return Object.assign(makeQuery(ref), {
         doc(id){ const d = id ? fsDoc(fs, name, id) : fsDoc(ref);
-          return { id: d.id, set: data => setDoc(d, data), delete: () => deleteDoc(d) }; },
+          return { id: d.id, set: data => setDoc(d, data), delete: () => deleteDoc(d), get: () => getDoc(d), onSnapshot: (n,e) => fsOnSnapshot(d, n, e) }; },
       });
     },
   };
@@ -437,10 +585,73 @@ const parseYmd=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d
 const shift=(s,n)=>{const d=parseYmd(s);d.setDate(d.getDate()+n);return ymd(d)};
 const mins=t=>{if(!t)return null;const[h,m]=t.split(':').map(Number);return h*60+m};
 
-const S={tab:'dash',date:ymd(new Date()),vehicles:[],customers:[],trips:[],tripTypes:[],ready:{v:false,c:false,t:false},live:false,aclUsers:[],aclRoles:[],aclReady:false,aclEmail:''};
+const S={tab:'dash',date:ymd(new Date()),vehicles:[],customers:[],trips:[],tripTypes:[],ready:{v:false,c:false,t:false},live:false,
+  email:'',me:null,roles:[],groups:[],members:[],authz:'none'};
+
+/* ---------- menu & permissions ---------- */
+const ICONS={
+  dash:'<path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/>',
+  trips:'<path d="M5 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM19 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M7 17h6a3 3 0 0 0 0-6h-2a3 3 0 0 1 0-6h6"/>',
+  customers:'<path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/>',
+  vehicles:'<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M3 11h18M7 17v2M17 17v2"/>',
+  tripTypes:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.2"/>',
+  members:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M17 11l2 2 3-4"/>',
+  roles:'<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  groups:'<circle cx="8" cy="9" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M2.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6M14.5 15.2c2.6-.4 4.9.8 6 3.8"/>',
+};
+const MENU=[
+  {key:'ops',label:'派車作業',children:[{key:'dash',label:'儀表板'},{key:'trips',label:'車趟管理'}]},
+  {key:'base',label:'基本資料',children:[{key:'customers',label:'客戶資料'},{key:'vehicles',label:'車輛資料'}]},
+  {key:'sys',label:'系統設定',children:[{key:'tripTypes',label:'車趟類型'},{key:'members',label:'權限管理'},{key:'roles',label:'角色管理'},{key:'groups',label:'群組管理'}]},
+];
+const MODULES=[['dash','儀表板'],['trips','車趟管理'],['customers','客戶資料'],['vehicles','車輛資料'],['tripTypes','車趟類型']];
+const MGR_KEYS=['members','roles','groups'];
+const ALL_KEYS=MENU.flatMap(g=>g.children.map(c=>c.key));
+const DEFAULT_ROLES=[
+  {id:'admin',name:'系統管理員',order:1,canManage:true,modules:MODULES.map(m=>m[0]),locked:true},
+  {id:'manager',name:'經理',order:2,canManage:true,modules:MODULES.map(m=>m[0])},
+  {id:'assistant',name:'特助',order:3,canManage:false,modules:['dash','trips','customers','vehicles','tripTypes']},
+  {id:'leader',name:'組長',order:4,canManage:false,modules:['dash','trips','customers','vehicles']},
+  {id:'staff',name:'組員',order:5,canManage:false,modules:['dash','trips']},
+];
+const sortByOrder=(a,b)=>(a.order??99)-(b.order??99)||String(a.name).localeCompare(String(b.name));
+const rolesList=()=>[...S.roles].sort(sortByOrder);
+const groupsList=()=>[...S.groups].sort(sortByOrder);
+const roleById=id=>S.roles.find(r=>r.id===id);
+const groupById=id=>S.groups.find(g=>g.id===id);
+const isAdminRole=r=>r&&(r.id==='admin');
+const roleCanManage=r=>!!r&&(isAdminRole(r)||r.canManage===true);
+const myRole=()=>S.me?roleById(S.me.roleId):null;
+const canManage=()=>roleCanManage(myRole());
+function allowedKeys(){
+  const r=myRole();if(!r)return [];
+  const mods=isAdminRole(r)?MODULES.map(m=>m[0]):(r.modules||[]);
+  return ALL_KEYS.filter(k=>MGR_KEYS.includes(k)?roleCanManage(r):mods.includes(k));
+}
+const can=k=>allowedKeys().includes(k);
+const labelOf=k=>MENU.flatMap(g=>g.children.map(c=>({...c,grp:g.label}))).find(c=>c.key===k);
+let navCollapsed=false,openGroups={ops:true,base:true,sys:true};
+try{navCollapsed=localStorage.getItem('dispatch.nav')==='1';const og=JSON.parse(localStorage.getItem('dispatch.groups')||'null');if(og)openGroups=og}catch(e){}
+document.body.classList.toggle('nav-collapsed',navCollapsed);
+function renderNav(){
+  const keys=allowedKeys();
+  $('#side').hidden=!(S.authz==='ok');$('#menuBtn').hidden=!(S.authz==='ok');
+  const r=myRole();
+  $('#userBox').hidden=!(S.authz==='ok');
+  $('#userName').textContent=S.me?.name||S.email||'—';
+  $('#userRole').textContent=r?r.name+(S.me?.groupId&&groupById(S.me.groupId)?' · '+groupById(S.me.groupId).name:''):'';
+  $('#userEmail').textContent=S.email;
+  $('#userMenuName').innerHTML=`${esc(S.me?.name||'')}<small>${esc($('#userRole').textContent)}</small>`;
+  $('#nav').innerHTML=MENU.map(g=>{
+    const items=g.children.filter(c=>keys.includes(c.key));if(!items.length)return '';
+    const open=openGroups[g.key]!==false;
+    return `<button class="nav-grp" data-grp="${g.key}" aria-expanded="${open}"><span class="lbl">${esc(g.label)}</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="nav-sub" ${open?'':'hidden'}>${items.map(c=>`<button class="nav-item" data-tab="${c.key}" title="${esc(c.label)}" ${S.tab===c.key?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ICONS[c.key]||''}</svg><span class="lbl">${esc(c.label)}</span></button>`).join('')}</div>`;
+  }).join('');
+}
 let db=null,unsubTrips=null;
 
-try{const t=localStorage.getItem('dispatch.tab');if(t)S.tab=t}catch(e){}
+try{const t=localStorage.getItem('dispatch.tab');if(t)S.tab=(t==='settings'?'tripTypes':t)}catch(e){}
 
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2200)}
 function errMsg(e){
@@ -454,13 +665,11 @@ function errMsg(e){
 /* ---------- data ---------- */
 async function save(coll,id,data){
   if(!S.live){toast('資料庫未連線，無法儲存');return false}
-  if(!can(({trips:'editTrips',customers:'editCustomers',vehicles:'editVehicles',tripTypes:'settings',accessUsers:'manage',accessRoles:'manage'})[coll]||'manage')){toast('沒有操作權限');return false}
   try{const ref=id?db.collection(coll).doc(id):db.collection(coll).doc();await ref.set(data);return ref.id}
   catch(e){toast(errMsg(e));return false}
 }
 async function remove(coll,id){
   if(!S.live)return false;
-  if(!can(({trips:'deleteTrips',customers:'editCustomers',vehicles:'editVehicles',tripTypes:'settings',accessUsers:'manage',accessRoles:'manage'})[coll]||'manage'))return false;
   try{await db.collection(coll).doc(id).delete();return true}catch(e){toast(errMsg(e));return false}
 }
 const vehById=id=>S.vehicles.find(v=>v.id===id);
@@ -481,23 +690,35 @@ const sortTrip=(a,b)=>(mins(a.start)??0)-(mins(b.start)??0);
 
 /* ---------- render ---------- */
 function render(){
-  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===S.tab)));
-  ['dash','trips','customers','vehicles','settings'].forEach(k=>$('#view-'+k).hidden=k!==S.tab);
-  $('#datebar').hidden=!(S.tab==='dash'||S.tab==='trips');
+  if(S.authz==='ok'&&db)startManage();
+  const keys=allowedKeys();
+  if(S.authz==='ok'&&keys.length&&!keys.includes(S.tab))S.tab=keys[0];
+  renderNav();
+  const show=S.authz==='ok'&&keys.includes(S.tab);
+  ALL_KEYS.forEach(k=>$('#view-'+k).hidden=!(show&&k===S.tab));
+  const gate=$('#gate');
+  gate.hidden=S.authz==='ok'&&keys.length>0;
+  if(S.authz==='checking')gate.textContent='正在確認你的權限…';
+  else if(S.authz==='ok'&&!keys.length)gate.textContent='你的角色目前沒有可瀏覽的功能，請聯絡系統管理員或經理。';
+  else gate.textContent='';
+  const li=labelOf(S.tab);$('#pageH').hidden=!show;
+  if(li){$('#pageTitle').textContent=li.label;$('#pageCrumb').textContent=li.grp}
+  $('#datebar').hidden=!(show&&(S.tab==='dash'||S.tab==='trips'));
   const d=parseYmd(S.date);
   $('#dayLabel').textContent=`${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
   $('#wkLabel').textContent=`星期${WK[d.getDay()]}${S.date===ymd(new Date())?'・今天':''}`;
   $('#datePick').value=S.date;
   const anySample=[...S.vehicles,...S.customers,...S.trips].some(x=>x.sample);
   $('#clearSample').hidden=!(S.live&&anySample);
+  if(!show)return;
   if(S.tab==='dash')renderDash();
-  if(S.aclReady){$('#addTrip').hidden=!can('editTrips');$('#addCust').hidden=!can('editCustomers');$('#addVeh').hidden=!can('editVehicles');$('#addType').hidden=!can('settings');$('#exportBtn').hidden=!can('export');$('#importLbl').hidden=!can('import');$('#copyPrev').hidden=!can('editTrips');}
   if(S.tab==='trips')renderTrips();
   if(S.tab==='customers')renderCust();
   if(S.tab==='vehicles')renderVeh();
-  if(S.tab==='settings'){renderTypes();aclRender();}
-  document.querySelectorAll('#tabs button').forEach(b=>{b.hidden=S.aclReady&&!can(b.dataset.tab)});
-  if(S.aclReady&&!can(S.tab)){S.tab=can('dash')?'dash':can('trips')?'trips':can('vehicles')?'vehicles':can('customers')?'customers':'settings';render();return;}
+  if(S.tab==='tripTypes')renderTypes();
+  if(S.tab==='members')renderMembers();
+  if(S.tab==='roles')renderRoles();
+  if(S.tab==='groups')renderGroups();
 }
 
 function typePill(t){return `<span class="pill tt" style="${tc(t)}">${esc(typeLabel(t))}</span>`}
@@ -743,105 +964,150 @@ $('#typeForm').addEventListener('submit',async e=>{
   if(await save('tripTypes',editingType?.id,data)){$('#typeDlg').close();toast('已儲存類型')}
 });
 
+/* ---------- members / roles / groups ---------- */
+const memberCount=(field,id)=>S.members.filter(m=>m[field]===id).length;
+function moduleChips(r){
+  if(!r)return '<span class="muted">—</span>';
+  const mods=isAdminRole(r)?MODULES.map(m=>m[0]):(r.modules||[]);
+  const chips=MODULES.filter(m=>mods.includes(m[0])).map(m=>`<span class="chip">${esc(m[1])}</span>`);
+  if(roleCanManage(r))chips.push('<span class="chip big">權限管理</span>');
+  return `<div class="mods">${chips.join('')||'<span class="muted">無</span>'}</div>`;
+}
+function renderMembers(){
+  const list=[...S.members].sort((a,b)=>(roleById(a.roleId)?.order??99)-(roleById(b.roleId)?.order??99)||String(a.name||a.email).localeCompare(String(b.name||b.email)));
+  if(!list.length){$('#memberTbl').innerHTML=`<tr><td class="empty"><strong>還沒有其他人員</strong>按「＋ 新增人員」輸入同事的 Gmail 並指定角色，對方就能登入。</td></tr>`;return}
+  $('#memberTbl').innerHTML=`<thead><tr><th>姓名</th><th>Gmail</th><th>角色</th><th>群組</th><th>可瀏覽功能</th><th>狀態</th><th></th></tr></thead><tbody>`+
+  list.map(m=>{const r=roleById(m.roleId),g=groupById(m.groupId);
+    return `<tr><td><b>${esc(m.name||'—')}</b>${m.email===S.email?' <span class="chip">你</span>':''}</td><td class="mono">${esc(m.email)}</td><td>${r?`<span class="chip big">${esc(r.name)}</span>`:'<span class="chip bad">未指定</span>'}</td><td>${esc(g?g.name:'—')}</td><td>${moduleChips(r)}</td><td>${m.active===false?'<span class="chip bad">停用</span>':'<span class="chip">啟用</span>'}</td><td><div class="row-act"><button class="btn sm" data-member="${esc(m.email)}">編輯</button></div></td></tr>`}).join('')+`</tbody>`;
+}
+function renderRoles(){
+  const list=rolesList();
+  if(!list.length){$('#roleTbl').innerHTML=`<tr><td class="empty">正在載入角色…</td></tr>`;return}
+  $('#roleTbl').innerHTML=`<thead><tr><th>角色</th><th>人數</th>${MODULES.map(m=>`<th>${esc(m[1])}</th>`).join('')}<th class="mgr">權限管理</th><th></th></tr></thead><tbody>`+
+  list.map(r=>{const lock=isAdminRole(r);const mods=lock?MODULES.map(m=>m[0]):(r.modules||[]);
+    return `<tr><td><b>${esc(r.name)}</b>${lock?' <span class="chip">固定全部</span>':''}</td><td class="mono">${memberCount('roleId',r.id)}</td>`+
+    MODULES.map(m=>`<td><input type="checkbox" aria-label="${esc(r.name)}可瀏覽${esc(m[1])}" data-perm="${esc(r.id)}" data-mod="${m[0]}" ${mods.includes(m[0])?'checked':''} ${lock?'disabled':''}></td>`).join('')+
+    `<td class="mgr"><input type="checkbox" aria-label="${esc(r.name)}可管理權限" data-perm="${esc(r.id)}" data-mod="__manage" ${roleCanManage(r)?'checked':''} ${lock?'disabled':''}></td><td><div class="row-act"><button class="btn sm" data-role="${esc(r.id)}">編輯</button></div></td></tr>`}).join('')+`</tbody>`;
+}
+function renderGroups(){
+  const list=groupsList();
+  if(!list.length){$('#groupTbl').innerHTML=`<tr><td class="empty"><strong>還沒有群組</strong>按「＋ 新增群組」建立部門或小組，例如調度組、業務組。</td></tr>`;return}
+  $('#groupTbl').innerHTML=`<thead><tr><th>排序</th><th>群組名稱</th><th>人數</th><th>成員</th><th>備註</th><th></th></tr></thead><tbody>`+
+  list.map(g=>{const ms=S.members.filter(m=>m.groupId===g.id);
+    return `<tr><td class="mono">${esc(g.order??'')}</td><td><b>${esc(g.name)}</b></td><td class="mono">${ms.length}</td><td>${ms.map(m=>esc(m.name||m.email)).join('、')||'<span class="muted">—</span>'}</td><td class="muted">${esc(g.note||'')}</td><td><div class="row-act"><button class="btn sm" data-group="${esc(g.id)}">編輯</button></div></td></tr>`}).join('')+`</tbody>`;
+}
+document.addEventListener('change',async e=>{
+  const c=e.target;if(!c.dataset||!c.dataset.perm)return;
+  const r=roleById(c.dataset.perm);if(!r||isAdminRole(r))return;
+  const{id,...rest}=r;const data={...rest,modules:[...(r.modules||[])]};
+  if(c.dataset.mod==='__manage'){
+    if(!c.checked&&S.me?.roleId===r.id){c.checked=true;toast('不能取消自己角色的權限管理，以免把自己鎖在外面');return}
+    data.canManage=c.checked;
+  }else{
+    data.modules=c.checked?[...new Set([...data.modules,c.dataset.mod])]:data.modules.filter(m=>m!==c.dataset.mod);
+  }
+  c.disabled=true;
+  if(await save('roles',r.id,data))toast(`已更新「${r.name}」的權限`);else c.checked=!c.checked;
+  c.disabled=false;
+});
 
-/* ================= 權限管理（維護說明） =================
- * 1. DEFAULT_ROLES：首次使用時的預設角色與可用功能。
- * 2. PERMS：所有可勾選的權限項目，新增功能時也要同步修改 Firestore 規則。
- * 3. accessUsers：以小寫 Google Email 當文件 ID，記錄使用者的 role。
- * 4. accessRoles：自訂角色的名稱與 permissions 陣列。
- * 5. aclRender()：負責「設定 → 權限管理」畫面。
- * 6. can()：前端按鈕顯示及操作提示；真正資料安全由 firestore.rules 控制。
- * 注意：修改此處不會自動更新 Firebase 規則；GitHub Pages 只部署網頁。
- * ===================================================== */
-// 權限代碼與畫面顯示名稱的對照表；代碼需與 firestore.rules 一致。
-const PERMS={dash:'儀表板',trips:'車趟清單',customers:'客戶資料',vehicles:'車輛資料',settings:'車趟類型設定',editTrips:'新增／修改車趟',deleteTrips:'刪除車趟',editCustomers:'編輯客戶',editVehicles:'編輯車輛',export:'匯出備份',import:'匯入備份',manage:'權限管理'};
-// 三種內建角色。管理員有全部權限；組員預設可看資料及修改車趟。
-const DEFAULT_ROLES=[{id:'admin',name:'系統管理員',permissions:Object.keys(PERMS)},{id:'leader',name:'組長',permissions:Object.keys(PERMS)},{id:'member',name:'組員',permissions:['dash','trips','customers','vehicles','editTrips']}];
-const role=id=>S.aclRoles.find(r=>r.id===id)||DEFAULT_ROLES.find(r=>r.id===id);
-// 目前登入者的角色；初始管理員信箱僅作為啟用階段的保護機制。
-const myRole=()=>S.aclUsers.find(u=>u.id===S.aclEmail)?.role||(S.aclEmail==='syujan27@gmail.com'?'admin':null);
-const can=p=>myRole()==='admin'||!!role(myRole())?.permissions?.includes(p);
-const isManager=()=>['admin','leader'].includes(myRole())&&can('manage');
-// 權限頁的篩選與編輯草稿保留在本機；只有送出表單才寫入 Firestore。
-const aclUI={tab:'users',page:1,selected:null,roleId:null,busy:false};
-const aclAllRoles=()=>[...DEFAULT_ROLES.filter(r=>!S.aclRoles.some(x=>x.id===r.id)),...S.aclRoles];
-// 初始管理員即使尚未有 accessUsers 文件也顯示，避免清單漏列。
-const aclAllUsers=()=>S.aclUsers.some(u=>u.id==='syujan27@gmail.com')?S.aclUsers:[{id:'syujan27@gmail.com',role:'admin'},...S.aclUsers];
-function aclRender(){
- $('#aclPanel').hidden=!isManager();if(!isManager())return;
- const roles=aclAllRoles(),users=aclAllUsers(),isUsers=aclUI.tab==='users',query=$('#aclSearch').value.trim().toLowerCase(),filter=$('#aclFilter').value;
- const options='<option value="">全部角色</option>'+roles.map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('');
- if($('#aclFilter').innerHTML!==options){$('#aclFilter').innerHTML=options;$('#aclFilter').value=filter;}
- $('#aclFilter').hidden=!isUsers;$('#aclSearch').placeholder=isUsers?'搜尋 Email 或角色名稱':'搜尋角色名稱';
- $('#aclAdd').textContent=isUsers?'＋ 新增使用者':'＋ 新增角色';$('#aclAdd').hidden=!isUsers&&myRole()!=='admin';
- document.querySelectorAll('[data-acl-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.aclTab===aclUI.tab)));
- $('#aclStats').innerHTML=[['使用者總數',users.length],['角色類型',roles.length],['管理人員',users.filter(u=>['admin','leader'].includes(u.role)).length]].map(([k,v])=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
- const list=(isUsers?users:roles).filter(x=>isUsers?(!filter||x.role===filter)&&`${x.id} ${role(x.role)?.name||x.role}`.toLowerCase().includes(query):x.name.toLowerCase().includes(query)).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'zh-TW'));
- const pages=Math.max(1,Math.ceil(list.length/8));aclUI.page=Math.min(aclUI.page,pages);const start=(aclUI.page-1)*8;
- $('#aclCount').textContent=`共 ${list.length} 筆`;
- $('#aclUsers').innerHTML='<thead><tr>'+(isUsers?'<th>Google Email</th><th>角色</th><th>功能範圍</th><th>操作</th>':'<th>角色名稱</th><th>成員數</th><th>開放功能</th><th>操作</th>')+'</tr></thead><tbody>'+list.slice(start,start+8).map(x=>{
- const r=isUsers?role(x.role):x,locked=isUsers&&(x.id==='syujan27@gmail.com'||(myRole()!=='admin'&&x.role==='admin'));
- return `<tr class="${aclUI.selected===x.id?'acl-selected':''}"><td class="acl-email">${esc(isUsers?x.id:x.name)}${isUsers&&x.id===S.aclEmail?' <span class="chip">目前帳號</span>':''}</td><td>${isUsers?`<span class="chip big">${esc(r?.name||x.role)}</span>`:users.filter(u=>u.role===x.id).length+' 人'}</td><td>${(r?.id==='admin'?Object.keys(PERMS):r?.permissions||[]).length} 項功能</td><td><div class="row-act"><button class="btn sm" data-acl-edit="${esc(x.id)}">${locked?'檢視':'編輯'}</button>${isUsers&&!locked?`<button class="btn sm danger" data-acl-remove="${esc(x.id)}">移除</button>`:''}</div></td></tr>`;
- }).join('')+(list.length?'':'<tr><td colspan="4" class="empty">沒有符合條件的資料，請調整搜尋或篩選。</td></tr>')+'</tbody>';
- $('#aclPageInfo').textContent=list.length?`顯示 ${start+1}–${Math.min(start+8,list.length)} 筆`:'顯示 0 筆';$('#aclPage').textContent=`${aclUI.page} / ${pages}`;$('#aclPrev').disabled=aclUI.page<=1;$('#aclNext').disabled=aclUI.page>=pages;
+let editingMember=null;
+function fillSel(sel,list,val,empty){sel.innerHTML=(empty?`<option value="">${empty}</option>`:'')+list.map(x=>`<option value="${esc(x.id)}" ${x.id===val?'selected':''}>${esc(x.name)}</option>`).join('')}
+function openMember(m){
+  editingMember=m||null;$('#memberDlgTitle').textContent=m?'編輯人員':'新增人員';
+  $('#mf-email').value=m?.email||'';$('#mf-email').disabled=!!m;
+  $('#mf-name').value=m?.name||'';
+  fillSel($('#mf-role'),rolesList(),m?.roleId||'staff');
+  fillSel($('#mf-group'),groupsList(),m?.groupId||'','（不分組）');
+  $('#mf-active').checked=m?m.active!==false:true;$('#mf-warn').textContent='';
+  const del=$('#mf-del');del.hidden=!m||m.email===S.email;
+  if(m)armDelete(del,async()=>{if(await remove('members',m.email)){$('#memberDlg').close();toast('已移除人員')}});
+  $('#memberDlg').showModal();
 }
-function aclCloseEditor(){if(aclUI.busy)return;$('#aclEditor').hidden=true;aclUI.selected=null;aclRender();}
-function aclOpen(id=null){
- aclUI.selected=id;$('#aclEditor').hidden=false;const userMode=aclUI.tab==='users';$('#aclUserForm').hidden=!userMode;$('#aclRoleForm').hidden=userMode;
- if(userMode){
- const u=aclAllUsers().find(x=>x.id===id),locked=!!u&&(u.id==='syujan27@gmail.com'||(myRole()!=='admin'&&u.role==='admin'));
- $('#aclEditorTitle').textContent=u?'使用者權限設定':'新增使用者';$('#aclEmail').value=u?.id||'';$('#aclEmail').readOnly=!!u;
- $('#aclUserRole').innerHTML=aclAllRoles().filter(r=>myRole()==='admin'||r.id!=='admin'||u?.role==='admin').map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('');$('#aclUserRole').value=u?.role||'member';$('#aclUserRole').disabled=locked;$('#aclUserForm button[type=submit],#aclUserForm button:not([type])').disabled=locked;aclUserSummary();
- }else{
- const r=role(id),locked=myRole()!=='admin'||id==='admin';aclUI.roleId=id;$('#aclEditorTitle').textContent=r?'角色權限設定':'新增角色';$('#aclNewRole').value=r?.name||'';$('#aclNewRole').disabled=locked;
- const groups=[['資料檢視',['dash','trips','customers','vehicles']],['資料維護',['editTrips','deleteTrips','editCustomers','editVehicles','settings']],['管理與備份',['manage','export','import']]];
- $('#aclRoles').innerHTML=groups.map(([name,perms])=>`<fieldset class="acl-perm-group"><legend>${name}</legend>${perms.map(p=>`<label><input type="checkbox" name="permission" value="${p}" ${(id==='admin'||(r?.permissions||['dash']).includes(p))?'checked':''} ${locked||(p==='manage'&&id==='leader')?'disabled':''}>${PERMS[p]}</label>`).join('')}</fieldset>`).join('');
- $('#aclRoleSave').hidden=locked;$('#aclRoleHint').textContent=id==='admin'?'系統管理員固定擁有全部功能。':myRole()!=='admin'?'只有系統管理員可以變更角色權限。':'權限管理頁面僅開放系統管理員與組長。儲存後套用至此角色所有成員。';
- }aclRender();
+$('#addMember').onclick=()=>openMember(null);
+$('#memberForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const email=(editingMember?.email||$('#mf-email').value).trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){$('#mf-warn').textContent='請輸入正確的 Gmail 地址';return}
+  if(!editingMember&&S.members.some(m=>m.email===email)){$('#mf-warn').textContent='這個 Gmail 已經在名單裡了';return}
+  const data={email,name:$('#mf-name').value.trim(),roleId:$('#mf-role').value,groupId:$('#mf-group').value,active:$('#mf-active').checked,updatedAt:new Date().toISOString()};
+  if(email===S.email){
+    if(!data.active){$('#mf-warn').textContent='不能停用自己的帳號';return}
+    if(!roleCanManage(roleById(data.roleId))){$('#mf-warn').textContent='不能把自己改成沒有權限管理的角色，以免把自己鎖在外面';return}
+  }
+  if(await save('members',email,data)){$('#memberDlg').close();toast(editingMember?'已更新人員':'已新增人員，對方現在可以用這個 Gmail 登入')}
+});
+
+let editingRole=null;
+function openRole(r){
+  editingRole=r||null;$('#roleDlgTitle').textContent=r?'編輯角色':'新增角色';
+  $('#rf-name').value=r?.name||'';$('#rf-order').value=r?.order??(Math.max(0,...S.roles.map(x=>Number(x.order)||0))+1);
+  $('#rf-manage').checked=roleCanManage(r);$('#rf-manage').disabled=isAdminRole(r);$('#rf-warn').textContent='';
+  const del=$('#rf-del');del.hidden=!r||isAdminRole(r);
+  if(r)armDelete(del,async()=>{
+    const n=memberCount('roleId',r.id);
+    if(n){$('#rf-warn').textContent=`還有 ${n} 位人員是這個角色，請先把他們改成其他角色再刪除。`;armDelete(del,()=>{});return}
+    if(await remove('roles',r.id)){$('#roleDlg').close();toast('已刪除角色')}
+  });
+  $('#roleDlg').showModal();
 }
-function aclUserSummary(){const r=role($('#aclUserRole').value);$('#aclUserSummary').textContent='可使用：'+(r?.id==='admin'?'全部功能':(r?.permissions||[]).map(p=>PERMS[p]).join('、')||'尚未開放功能');}
-$('#aclUserRole').onchange=aclUserSummary;
-$('#aclAdd').onclick=()=>aclOpen();
-['aclClose','aclCancel','aclRoleCancel'].forEach(id=>$('#'+id).onclick=aclCloseEditor);
-$('#aclSearch').oninput=$('#aclFilter').onchange=()=>{aclUI.page=1;aclRender();};
-$('#aclPrev').onclick=()=>{aclUI.page--;aclRender();};$('#aclNext').onclick=()=>{aclUI.page++;aclRender();};
-// 寫入期間鎖住表單，失敗時保留草稿；成功才關閉編輯區。
-async function aclSubmit(form,action){if(aclUI.busy)return;aclUI.busy=true;const buttons=[...form.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);try{if(await action()){aclUI.busy=false;aclCloseEditor();toast('已儲存變更');}}finally{aclUI.busy=false;buttons.forEach(b=>b.disabled=false);}}
-$('#aclUserForm').addEventListener('submit',async e=>{
- e.preventDefault();if(!isManager())return;
- const email=$('#aclEmail').value.trim().toLowerCase(),r=$('#aclUserRole').value,existing=aclAllUsers().find(u=>u.id===email);
- if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return toast('Email 格式不正確');
- if(!role(r))return toast('請選擇有效角色');
- if(myRole()!=='admin'&&(r==='admin'||existing?.role==='admin'))return toast('不可修改系統管理員');
- if(email==='syujan27@gmail.com')return toast('不可變更初始管理員');
- if(!aclUI.selected&&existing)return toast('此 Email 已存在，請從清單選擇編輯');
- await aclSubmit(e.target,()=>save('accessUsers',email,{role:r}));
+$('#addRole').onclick=()=>openRole(null);
+$('#roleForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const name=$('#rf-name').value.trim();if(!name)return;
+  if(S.roles.some(x=>x.name===name&&x.id!==editingRole?.id)){$('#rf-warn').textContent='已經有同名的角色';return}
+  const base=editingRole?(({id,...rest})=>rest)(editingRole):{modules:['dash']};
+  const data={...base,name,order:Number($('#rf-order').value)||0,canManage:isAdminRole(editingRole)?true:$('#rf-manage').checked};
+  if(editingRole&&S.me?.roleId===editingRole.id&&!data.canManage){$('#rf-warn').textContent='不能取消自己角色的權限管理';return}
+  if(await save('roles',editingRole?.id,data)){$('#roleDlg').close();toast('已儲存角色')}
 });
-$('#aclRoleForm').addEventListener('submit',async e=>{
- e.preventDefault();if(myRole()!=='admin'||aclUI.roleId==='admin')return;
- const name=$('#aclNewRole').value.trim();if(!name)return;
- if(aclAllRoles().some(r=>r.name===name&&r.id!==aclUI.roleId))return toast('已有同名角色');
- const id=aclUI.roleId||'custom_'+crypto.randomUUID().replace(/-/g,'').slice(0,18),permissions=[...$('#aclRoles').querySelectorAll('input:checked')].map(x=>x.value);
- await aclSubmit(e.target,()=>save('accessRoles',id,{name,permissions}));
+
+let editingGroup=null;
+function openGroup(g){
+  editingGroup=g||null;$('#groupDlgTitle').textContent=g?'編輯群組':'新增群組';
+  $('#gf-name').value=g?.name||'';$('#gf-order').value=g?.order??(Math.max(0,...S.groups.map(x=>Number(x.order)||0))+1);$('#gf-note').value=g?.note||'';$('#gf-warn').textContent='';
+  const del=$('#gf-del');del.hidden=!g;
+  if(g)armDelete(del,async()=>{
+    const n=memberCount('groupId',g.id);
+    if(n){$('#gf-warn').textContent=`還有 ${n} 位人員在這個群組，請先把他們移到其他群組再刪除。`;armDelete(del,()=>{});return}
+    if(await remove('groups',g.id)){$('#groupDlg').close();toast('已刪除群組')}
+  });
+  $('#groupDlg').showModal();
+}
+$('#addGroup').onclick=()=>openGroup(null);
+$('#groupForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const name=$('#gf-name').value.trim();if(!name)return;
+  if(S.groups.some(x=>x.name===name&&x.id!==editingGroup?.id)){$('#gf-warn').textContent='已經有同名的群組';return}
+  if(await save('groups',editingGroup?.id,{name,order:Number($('#gf-order').value)||0,note:$('#gf-note').value.trim()})){$('#groupDlg').close();toast('已儲存群組')}
 });
-document.addEventListener('click',async e=>{
- const tab=e.target.closest('[data-acl-tab]');if(tab){if(aclUI.busy)return;aclUI.tab=tab.dataset.aclTab;aclUI.page=1;$('#aclSearch').value='';$('#aclFilter').value='';aclCloseEditor();return;}
- const edit=e.target.closest('[data-acl-edit]');if(edit){if(!aclUI.busy)aclOpen(edit.dataset.aclEdit);return;}
- const b=e.target.closest('[data-acl-remove]');if(!b||!isManager())return;
- const email=b.dataset.aclRemove,u=aclAllUsers().find(x=>x.id===email);
- if(!u||email==='syujan27@gmail.com'||(u.role==='admin'&&myRole()!=='admin'))return;
- if(confirm('確定移除 '+email+' 的登入權限？')&&await remove('accessUsers',email)){if(aclUI.selected===email)aclCloseEditor();toast('已移除使用者');}
-});
+
+/* user menu */
+function setUserMenu(o){$('#userMenu').hidden=!o;$('#userChip').setAttribute('aria-expanded',String(o))}
+$('#userChip').onclick=e=>{e.stopPropagation();setUserMenu($('#userMenu').hidden)};
+document.addEventListener('click',e=>{if(!e.target.closest('#userBox'))setUserMenu(false)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')setUserMenu(false)});
+$('#userLogout').onclick=()=>{setUserMenu(false);signOut(auth)};
+
+/* nav interactions */
+function setNavOpen(o){document.body.classList.toggle('nav-open',o)}
+$('#menuBtn').onclick=()=>setNavOpen(true);
+$('#scrim').onclick=()=>setNavOpen(false);
+$('#collapseBtn').onclick=()=>{navCollapsed=!navCollapsed;document.body.classList.toggle('nav-collapsed',navCollapsed);$('#collapseBtn').setAttribute('aria-label',navCollapsed?'展開選單':'收合選單');try{localStorage.setItem('dispatch.nav',navCollapsed?'1':'0')}catch(e){}};
 
 /* ---------- events ---------- */
 document.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.tab){if(S.aclReady&&!can(b.dataset.tab))return;S.tab=b.dataset.tab;try{localStorage.setItem('dispatch.tab',S.tab)}catch(_){ }render();return}
+  if(b.dataset.grp){if(navCollapsed)return;openGroups[b.dataset.grp]=!(openGroups[b.dataset.grp]!==false);try{localStorage.setItem('dispatch.groups',JSON.stringify(openGroups))}catch(_){ }renderNav();return}
+  if(b.dataset.tab){S.tab=b.dataset.tab;try{localStorage.setItem('dispatch.tab',S.tab)}catch(_){ }setNavOpen(false);render();window.scrollTo({top:0});return}
+  if(b.dataset.member){openMember(S.members.find(m=>m.email===b.dataset.member));return}
+  if(b.dataset.role){openRole(roleById(b.dataset.role));return}
+  if(b.dataset.group){openGroup(groupById(b.dataset.group));return}
   if(b.dataset.edit){const t=S.trips.find(x=>x.id===b.dataset.edit);if(t)openTrip(t);return}
   if(b.dataset.cust){openCust(custById(b.dataset.cust));return}
   if(b.dataset.veh){openVeh(vehById(b.dataset.veh));return}
   if(b.dataset.type){openType(typeOf(b.dataset.type));return}
-  if(b.dataset.assign){if(!can('editTrips'))return;
+  if(b.dataset.assign){
     const id=b.dataset.assign;const sel=document.querySelector(`[data-assign-sel="${CSS.escape(id)}"]`);
     if(!sel.value){toast('請先選擇車輛');return}
     const t=S.trips.find(x=>x.id===id);const{id:_,...rest}=t;
@@ -858,7 +1124,7 @@ $('#datePick').onchange=e=>{if(e.target.value)setDate(e.target.value)};
 $('#addTrip').onclick=()=>openTrip(null);
 $('#addCust').onclick=()=>openCust(null);
 $('#addVeh').onclick=()=>openVeh(null);
-$('#copyPrev').onclick=async()=>{if(!can('editTrips'))return;
+$('#copyPrev').onclick=async()=>{
   if(!S.live){toast('資料庫未連線');return}
   const prev=shift(S.date,-1);
   try{
@@ -872,7 +1138,7 @@ $('#copyPrev').onclick=async()=>{if(!can('editTrips'))return;
   }catch(e){toast(errMsg(e))}
 };
 let clearArmed=false;
-$('#clearSample').onclick=async()=>{if(myRole()!=='admin')return;
+$('#clearSample').onclick=async()=>{
   const b=$('#clearSample');
   if(!clearArmed){clearArmed=true;b.textContent='再按一次，刪除所有範例資料';b.classList.add('danger');setTimeout(()=>{clearArmed=false;b.textContent='清除範例資料';b.classList.remove('danger')},4000);return}
   clearArmed=false;b.textContent='清除中…';
@@ -895,62 +1161,84 @@ function subTrips(){
   },onDbErr);
 }
 function onDbErr(e){
-  if(e&&e.code==='permission-denied'){
-    $('#loginMsg').textContent='這個帳號不在使用名單裡，請管理員把你的 Gmail 加入名單。';
-    signOut(auth);return;
-  }
+  if(e&&e.code==='permission-denied'){$('#syncState').textContent='部分資料沒有讀取權限';return}
   $('#syncState').textContent='同步中斷，請重新整理頁面';
 }
-let unsubs=[];
-function stopAll(){unsubs.forEach(u=>u());unsubs=[];unsubTrips?.();unsubTrips=null}
+let unsubs=[],dataOn=false,mgrOn=false;
+function stopAll(){unsubs.forEach(u=>u());unsubs=[];unsubTrips?.();unsubTrips=null;dataOn=false;mgrOn=false}
+function denyLogin(msg){$('#loginMsg').textContent=msg;signOut(auth)}
+async function bootstrapOwner(user){
+  // Only succeeds for owners listed in the Firestore rules (ownerList).
+  const rs=await db.collection('roles').get();
+  if(rs.empty){for(const r of DEFAULT_ROLES){const{id,...rest}=r;await db.collection('roles').doc(id).set(rest)}}
+  await db.collection('members').doc(S.email).set({email:S.email,name:user.displayName||'',roleId:'admin',groupId:'',active:true,updatedAt:new Date().toISOString()});
+}
+function startData(){
+  if(dataOn)return;dataOn=true;
+  unsubs.push(db.collection('roles').onSnapshot(s=>{S.roles=s.docs.map(d=>({id:d.id,...d.data()}));render()},onDbErr));
+  unsubs.push(db.collection('groups').onSnapshot(s=>{S.groups=s.docs.map(d=>({id:d.id,...d.data()}));render()},onDbErr));
+  unsubs.push(db.collection('vehicles').onSnapshot(s=>{S.vehicles=s.docs.map(d=>({id:d.id,...d.data()}));S.ready.v=true;render()},onDbErr));
+  unsubs.push(db.collection('customers').onSnapshot(s=>{S.customers=s.docs.map(d=>({id:d.id,...d.data()}));S.ready.c=true;render()},onDbErr));
+  unsubs.push(db.collection('tripTypes').onSnapshot(async s=>{
+    S.tripTypes=s.docs.map(d=>({id:d.id,...d.data()}));render();
+    if(s.empty&&!boot.seeded){boot.seeded=true;
+      try{for(const t of DEFAULT_TYPES){const{id,...rest}=t;await db.collection('tripTypes').doc(id).set(rest)}}catch(e){}
+    }
+  },onDbErr));
+  subTrips();
+}
+function startManage(){
+  if(mgrOn||!canManage())return;mgrOn=true;
+  unsubs.push(db.collection('members').onSnapshot(s=>{S.members=s.docs.map(d=>({...d.data(),email:d.id}));render()},onDbErr));
+}
 function boot(){
   render();
   onAuthStateChanged(auth,user=>{
     stopAll();
     if(!user){
-      db=null;S.live=false;S.vehicles=[];S.customers=[];S.trips=[];S.tripTypes=[];S.aclUsers=[];S.aclRoles=[];S.aclEmail='';S.aclReady=false;S.ready={v:false,c:false,t:false};
+      db=null;S.live=false;S.vehicles=[];S.customers=[];S.trips=[];S.tripTypes=[];S.roles=[];S.groups=[];S.members=[];S.me=null;S.authz='none';S.ready={v:false,c:false,t:false};
       $('#login').hidden=false;['exportBtn','importLbl','logoutBtn'].forEach(id=>$('#'+id).hidden=true);
       $('#whoami').textContent='';$('#syncState').textContent='尚未登入';render();return;
     }
     $('#login').hidden=true;
-    S.aclEmail=(user.email||'').toLowerCase();S.aclReady=false;
-    db=makeDb();S.live=true;
-    $('#whoami').textContent='· '+(user.email||'');
+    db=makeDb();S.live=true;S.email=(user.email||'').toLowerCase();S.authz='checking';render();
+    $('#whoami').textContent='· '+S.email;
     ['exportBtn','importLbl','logoutBtn'].forEach(id=>$('#'+id).hidden=false);
-    $('#syncState').textContent='已連線 · 資料即時同步';
-    unsubs.push(db.collection('accessUsers').onSnapshot(s=>{S.aclUsers=s.docs.map(d=>({id:d.id,...d.data()}));S.aclReady=true;render()},onDbErr));
-    unsubs.push(db.collection('accessRoles').onSnapshot(s=>{S.aclRoles=s.docs.map(d=>({id:d.id,...d.data()}));render()},onDbErr));
-    unsubs.push(db.collection('vehicles').onSnapshot(s=>{S.vehicles=s.docs.map(d=>({id:d.id,...d.data()}));S.ready.v=true;render()},onDbErr));
-    unsubs.push(db.collection('customers').onSnapshot(s=>{S.customers=s.docs.map(d=>({id:d.id,...d.data()}));S.ready.c=true;render()},onDbErr));
-    unsubs.push(db.collection('tripTypes').onSnapshot(async s=>{
-      S.tripTypes=s.docs.map(d=>({id:d.id,...d.data()}));render();
-      if(s.empty&&!boot.seeded){boot.seeded=true;
-        try{for(const t of DEFAULT_TYPES){const{id,...rest}=t;await db.collection('tripTypes').doc(id).set(rest)}}catch(e){}
+    let tried=false;
+    unsubs.push(db.collection('members').doc(S.email).onSnapshot(async snap=>{
+      if(!snap.exists){
+        if(!tried){tried=true;try{await bootstrapOwner(user);return}catch(e){}}
+        denyLogin(`${S.email} 還沒有開通，請系統管理員或經理在「權限管理」加入你的 Gmail。`);return;
       }
-    },onDbErr));
-    subTrips();
+      const m=snap.data();
+      if(m.active===false){denyLogin('你的帳號已被停用，請聯絡系統管理員。');return}
+      S.me={...m,email:S.email};S.authz='ok';
+      $('#syncState').textContent='已連線 · 資料即時同步';
+      startData();render();
+    },e=>{denyLogin('無法確認你的權限：'+(e.code||e.message))}));
   });
-  setInterval(()=>{if(S.tab==='dash'&&S.date===ymd(new Date()))renderDash()},60000);
+  setInterval(()=>{if(S.tab==='dash'&&S.date===ymd(new Date())&&S.authz==='ok')renderDash()},60000);
 }
 $('#loginBtn').onclick=async()=>{
   try{await signInWithPopup(auth,new GoogleAuthProvider())}
   catch(e){if(e.code!=='auth/popup-closed-by-user')$('#loginMsg').textContent='登入失敗：'+(e.code||e.message)}
+  $('#loginBtn').blur();
 };
 $('#logoutBtn').onclick=()=>signOut(auth);
 
 /* ---------- backup ---------- */
-const COLLS=['tripTypes','vehicles','customers','trips'];
-$('#exportBtn').onclick=async()=>{if(!can('export'))return;
+const COLLS=['roles','groups','members','tripTypes','vehicles','customers','trips'];
+$('#exportBtn').onclick=async()=>{
   try{
     const out={app:'north-coast-dispatch',version:1,exportedAt:new Date().toISOString()};
-    for(const c of COLLS){const snap=await getDocs(fsCollection(fs,c));out[c]=snap.docs.map(d=>({id:d.id,...d.data()}))}
+    for(const c of COLLS){try{const snap=await getDocs(fsCollection(fs,c));out[c]=snap.docs.map(d=>({id:d.id,...d.data()}))}catch(e){out[c]=[]}}
     const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`派車備份-${ymd(new Date())}.json`;
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
     toast(`已匯出：車輛 ${out.vehicles.length}、客戶 ${out.customers.length}、車趟 ${out.trips.length}`);
   }catch(e){toast(errMsg(e))}
 };
-$('#importFile').onchange=async e=>{if(!can('import'))return;
+$('#importFile').onchange=async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
   try{
     const data=JSON.parse(await f.text());let n=0;
@@ -968,4 +1256,3 @@ boot();
 </script>
 </body>
 </html>
-
