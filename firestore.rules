@@ -10,10 +10,10 @@ service cloud.firestore {
   function admin() {return bootstrap() || (staff() && roleId() == 'admin');}
   function leader() {return staff() && (admin() || roleId() == 'leader');}
   function roleDoc() {return get(/databases/$(database)/documents/accessRoles/$(roleId()));}
-  function permitted(p) {return staff() && (admin() || (roleId() == 'leader' && p == 'manage') || (exists(/databases/$(database)/documents/accessRoles/$(roleId())) && p in roleDoc().data.permissions));}
+  function permitted(p) {return staff() && (admin() || (roleId() == 'leader' && (p == 'manage' || !exists(/databases/$(database)/documents/accessRoles/leader))) || (roleId() == 'member' && !exists(/databases/$(database)/documents/accessRoles/member) && p in ['dash','trips','customers','vehicles','editTrips']) || (exists(/databases/$(database)/documents/accessRoles/$(roleId())) && p in roleDoc().data.permissions));}
   match /accessUsers/{id} {
    allow read: if staff();
-   allow create, update: if leader() && id == id.lower() && request.resource.data.keys().hasOnly(['role']) && request.resource.data.role is string && exists(/databases/$(database)/documents/accessRoles/$(request.resource.data.role)) && (admin() || (request.resource.data.role != 'admin' && (!exists(/databases/$(database)/documents/accessUsers/$(id)) || resource.data.role != 'admin'))) && (id != 'syujan27@gmail.com' || request.resource.data.role == 'admin');
+   allow create, update: if leader() && id == id.lower() && request.resource.data.keys().hasOnly(['role']) && request.resource.data.role is string && (request.resource.data.role in ['admin','leader','member'] || exists(/databases/$(database)/documents/accessRoles/$(request.resource.data.role))) && (admin() || (request.resource.data.role != 'admin' && (!exists(/databases/$(database)/documents/accessUsers/$(id)) || resource.data.role != 'admin'))) && (id != 'syujan27@gmail.com' || request.resource.data.role == 'admin');
    allow delete: if leader() && id != 'syujan27@gmail.com' && (admin() || resource.data.role != 'admin');
   }
   match /accessRoles/{id} {
