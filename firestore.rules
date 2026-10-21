@@ -1,25 +1,29 @@
 rules_version = '2';
-// 誰可以讀寫派車資料：只有下面名單裡的 Google 帳號（Gmail）。
-// 新增或移除人員：修改 allowList()，然後在 Firebase 主控台按「發布」。
 service cloud.firestore {
-  match /databases/{database}/documents {
-
-    function allowList() {
-      return [
-        "你的帳號@gmail.com",
-        // "同事A@gmail.com",
-        // "同事B@gmail.com",
-      ];
-    }
-
-    function isStaff() {
-      return request.auth != null
-        && request.auth.token.email_verified == true
-        && request.auth.token.email.lower() in allowList();
-    }
-
-    match /vehicles/{id}  { allow read, write: if isStaff(); }
-    match /customers/{id} { allow read, write: if isStaff(); }
-    match /trips/{id}     { allow read, write: if isStaff(); }
+ match /databases/{database}/documents {
+  function signed() {return request.auth != null && request.auth.token.email_verified == true;}
+  function email() {return request.auth.token.email.lower();}
+  function bootstrap() {return signed() && email() == 'syujan27@gmail.com';}
+  function userDoc() {return get(/databases/$(database)/documents/accessUsers/$(email()));}
+  function staff() {return signed() && (bootstrap() || exists(/databases/$(database)/documents/accessUsers/$(email())));}
+  function roleId() {return bootstrap() ? 'admin' : userDoc().data.role;}
+  function admin() {return bootstrap() || (staff() && roleId() == 'admin');}
+  function leader() {return staff() && (admin() || roleId() == 'leader');}
+  function roleDoc() {return get(/databases/$(database)/documents/accessRoles/$(roleId()));}
+  function permitted(p) {return staff() && (admin() || (roleId() == 'leader' && p == 'manage') || (exists(/databases/$(database)/documents/accessRoles/$(roleId())) && p in roleDoc().data.permissions));}
+  match /accessUsers/{id} {
+   allow read: if staff();
+   allow create, update: if leader() && id == id.lower() && request.resource.data.keys().hasOnly(['role']) && request.resource.data.role is string && exists(/databases/$(database)/documents/accessRoles/$(request.resource.data.role)) && (admin() || (request.resource.data.role != 'admin' && (!exists(/databases/$(database)/documents/accessUsers/$(id)) || resource.data.role != 'admin'))) && (id != 'syujan27@gmail.com' || request.resource.data.role == 'admin');
+   allow delete: if leader() && id != 'syujan27@gmail.com' && (admin() || resource.data.role != 'admin');
   }
+  match /accessRoles/{id} {
+   allow read: if staff();
+   allow create, update: if admin() && id != 'admin' && request.resource.data.keys().hasOnly(['name','permissions']) && request.resource.data.name is string && request.resource.data.permissions is list && request.resource.data.permissions.hasOnly(['dash','trips','customers','vehicles','settings','editTrips','deleteTrips','editCustomers','editVehicles','export','import','manage']) && (id != 'leader' || 'manage' in request.resource.data.permissions);
+   allow delete: if false;
+  }
+  match /vehicles/{id} {allow read: if permitted('vehicles');allow write: if permitted('editVehicles');}
+  match /customers/{id} {allow read: if permitted('customers');allow write: if permitted('editCustomers');}
+  match /trips/{id} {allow read: if permitted('trips') || permitted('dash');allow create, update: if permitted('editTrips');allow delete: if permitted('deleteTrips');}
+  match /tripTypes/{id} {allow read: if staff();allow write: if permitted('settings');}
+ }
 }
