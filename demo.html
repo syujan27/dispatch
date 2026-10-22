@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>派車管理系統（展示版）</title>
 <style>body{margin:0}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/zh-tw.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Iansui&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
@@ -146,6 +149,12 @@ table.rp td.wrap{white-space:normal;min-width:160px}
 .btn{white-space:nowrap}
 #memberTbl td{white-space:nowrap}
 #memberTbl .mods{min-width:240px}
+.dlg-b small.hint{color:var(--ocean);font-size:12px;min-height:0}
+.flatpickr-input[readonly]{cursor:pointer}
+.flatpickr-calendar{font-family:var(--f-body)}
+dialog .flatpickr-calendar{position:absolute}
+.flatpickr-day.selected,.flatpickr-day.selected:hover,.flatpickr-day.today.selected{background:var(--ocean);border-color:var(--ocean);color:var(--ocean-ink)}
+.flatpickr-day.today{border-color:var(--ocean)}
 .gate{padding:60px 16px;text-align:center;color:var(--muted)}
 
 .banner{margin-top:14px;padding:10px 14px;border-radius:10px;background:var(--sand);font-size:13px}
@@ -290,6 +299,7 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
         </button>
         <div class="user-menu" id="userMenu" hidden>
           <div class="um-name" id="userMenuName"></div><div class="um-email" id="userEmail"></div>
+          <button class="um-item" id="userTour">新手教學</button>
           <button class="um-item" id="userPw" hidden>修改密碼</button>
           <button class="um-item" id="userLogout">登出</button>
         </div>
@@ -301,7 +311,7 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
     <button class="iconbtn" id="prevDay" aria-label="前一天">‹</button>
     <div><span class="day" id="dayLabel">—</span><span class="wk" id="wkLabel"></span></div>
     <button class="iconbtn" id="nextDay" aria-label="後一天">›</button>
-    <input type="date" id="datePick" aria-label="選擇日期">
+    <input type="text" id="datePick" placeholder="年/月/日" aria-label="選擇日期">
     <button class="btn ghost" id="todayBtn">今天</button>
     <span class="spacer"></span>
     <button class="btn" id="copyPrev">複製前一日車趟</button>
@@ -360,7 +370,7 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
     <section class="panel">
       <div class="panel-h">
         <h2>月報表</h2><span class="sub" id="rpSub"></span><span class="spacer"></span>
-        <label class="rp-f">月份<input type="month" id="rpMonth"></label>
+        <label class="rp-f">年<select id="rpY"></select></label><label class="rp-f">月<select id="rpM"></select></label>
         <label class="rp-f">車號<select id="rpVeh"></select></label>
         <button class="btn primary" id="rpExport">匯出 Excel</button>
       </div>
@@ -407,11 +417,14 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
   <form method="dialog" id="tripForm">
     <div class="dlg-h" id="tripDlgTitle">新增車趟</div>
     <div class="dlg-b">
-      <label>日期<input type="date" id="tf-date" required></label>
+      <label id="tf-date-l"><span id="tf-date-t">起（出發日）</span><input type="text" id="tf-date" placeholder="年/月/日" required></label>
+      <label id="tf-date2-l">迄（回程日）<input type="text" id="tf-date2" placeholder="年/月/日"></label>
+      <label class="full chk" id="tf-series-l" hidden><input type="checkbox" id="tf-series"> <span id="tf-series-t"></span></label>
+      <label>客戶<input type="text" id="tf-cust" autofocus list="custList" placeholder="輸入或選擇客戶" autocomplete="off"><small class="hint" id="tf-cust-hint"></small></label>
+      <datalist id="custList"></datalist>
       <label>車趟類型<select id="tf-type" required></select></label>
-      <label class="full">客戶<select id="tf-cust"></select></label>
-      <label>出車時間<input type="time" id="tf-start" required></label>
-      <label>結束時間<input type="time" id="tf-end" required></label>
+      <label>出車時間<input type="text" id="tf-start" placeholder="時:分" inputmode="numeric" required></label>
+      <label>結束時間<input type="text" id="tf-end" placeholder="時:分" inputmode="numeric" required></label>
       <label>上車地點<input type="text" id="tf-pickup" placeholder="例：學校側門"></label>
       <label>目的地 / 路線<input type="text" id="tf-dest" placeholder="例：九份 → 金瓜石"></label>
       <label>人數<input type="number" id="tf-pax" min="0" inputmode="numeric"></label>
@@ -461,7 +474,7 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
       <label>狀態<select id="vf-status"><option>可派</option><option>維修</option><option>停用</option></select></label>
       <label>司機<input type="text" id="vf-driver"></label>
       <label>司機電話<input type="tel" id="vf-phone"></label>
-      <label>出廠日<input type="date" id="vf-mfg"></label>
+      <label>出廠日<input type="text" id="vf-mfg" placeholder="年/月/日"></label>
       <label>迄今<input type="text" id="vf-age" readonly tabindex="-1" placeholder="選擇出廠日後自動計算"></label>
       <label class="full">備註<input type="text" id="vf-note"></label>
     </div>
@@ -575,6 +588,35 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
 </dialog>
 
 <div class="toast" id="toast" role="status"></div>
+
+<!-- Guided tour -->
+<div class="tour" id="tour" hidden>
+  <div class="tour-block"></div>
+  <div class="tour-hole" id="tourHole"></div>
+  <div class="tour-tip" id="tourTip" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+    <div class="tour-step" id="tourStep"></div>
+    <h3 id="tourTitle"></h3>
+    <p id="tourText"></p>
+    <div class="tour-f">
+      <button class="btn ghost sm" id="tourSkip">略過教學</button>
+      <span class="spacer"></span>
+      <button class="btn sm" id="tourPrev">上一步</button>
+      <button class="btn primary sm" id="tourNext">下一步</button>
+    </div>
+  </div>
+</div>
+<style>
+.tour{position:fixed;inset:0;z-index:60}
+.tour-block{position:absolute;inset:0}
+.tour-hole{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px color-mix(in srgb,#04161c 58%,transparent);outline:2px solid var(--ocean);outline-offset:2px;transition:all .25s ease;pointer-events:none}
+.tour-hole.center{width:0!important;height:0!important;outline:0;left:50%!important;top:50%!important}
+.tour-tip{position:fixed;width:min(340px,calc(100vw - 32px));background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:16px 18px 14px;box-shadow:0 18px 50px rgba(0,0,0,.28);transition:top .25s ease,left .25s ease}
+.tour-step{font-size:12px;color:var(--ocean);letter-spacing:.12em;font-weight:600}
+.tour-tip h3{font-family:var(--f-display);font-size:18px;margin:4px 0 6px}
+.tour-tip p{margin:0 0 14px;color:var(--ink);line-height:1.65;font-size:14px}
+.tour-f{display:flex;gap:8px;align-items:center}
+@media (prefers-reduced-motion:reduce){.tour-hole,.tour-tip{transition:none}}
+</style>
 
 <!-- Login gate -->
 <div id="login" class="login" hidden>
@@ -891,7 +933,12 @@ async function remove(coll,id){
   if(!S.live)return false;
   try{await db.collection(coll).doc(id).delete();return true}catch(e){toast(errMsg(e));return false}
 }
+function setV(sel,v){const el=$(sel);el.value=v||'';const fp=el._flatpickr;if(fp){if(v)fp.setDate(v,false,fp.config.dateFormat);else fp.clear(false)}}
 const vehById=id=>S.vehicles.find(v=>v.id===id);
+const custName=t=>custById(t.customerId)?.name||t.customerName||'';
+const custByName=n=>{n=String(n||'').trim();return n?S.customers.find(c=>String(c.name).trim()===n):null};
+const seriesTag=t=>t.seriesDays>1?`第 ${t.seriesDay}/${t.seriesDays} 天`:'';
+const dateList=(a,b)=>{const out=[];let d=a;while(d<=b&&out.length<62){out.push(d);d=shift(d,1)}return out};
 const custById=id=>S.customers.find(c=>c.id===id);
 const usable=v=>v&&(v.status||'可派')==='可派';
 function tripVeh(t){const v=t.vehicleId&&vehById(t.vehicleId);return v||null}
@@ -918,7 +965,7 @@ function render(){
   const gate=$('#gate');
   gate.hidden=S.authz==='ok'&&keys.length>0;
   if(S.authz==='checking')gate.textContent='正在確認你的權限…';
-  else if(S.authz==='ok'&&!keys.length)gate.textContent='你的角色目前沒有可瀏覽的功能，請聯絡系統管理員或經理。';
+  else if(S.authz==='ok'&&!keys.length)gate.textContent='目前沒有可以使用的功能，請聯絡系統管理員。';
   else gate.textContent='';
   const li=labelOf(S.tab);$('#pageH').hidden=!show;
   if(li){$('#pageTitle').textContent=li.label;$('#pageCrumb').textContent=li.grp}
@@ -926,7 +973,7 @@ function render(){
   const d=parseYmd(S.date);
   $('#dayLabel').textContent=`${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
   $('#wkLabel').textContent=`星期${WK[d.getDay()]}${S.date===ymd(new Date())?'・今天':''}`;
-  $('#datePick').value=S.date;
+  setV('#datePick',S.date);
   const anySample=[...S.vehicles,...S.customers,...S.trips].some(x=>x.sample);
   $('#clearSample').hidden=!(S.live&&anySample);
   if(!show)return;
@@ -982,8 +1029,8 @@ function renderDash(){
       html+=`<div class="tl-row ${off?'off':''}" style="--h:${H}"><div class="tl-lab"><span class="plate">${esc(v.plate)}</span><span class="meta">${esc(v.driver||'未指定司機')}${v.seats?` · ${esc(v.seats)}座`:''}${off?` · ${esc(v.status)}`:''}</span></div><div class="tl-track">`;
       if(isToday&&nowM>=h0*60&&nowM<=h1*60)html+=`<span class="now" style="left:${pct(nowM)}%"></span>`;
       assigned.filter(t=>t.vehicleId===v.id).forEach(t=>{
-        const[s,e]=tripRange(t);const c=custById(t.customerId);
-        html+=`<button class="blk tt ${conf.has(t.id)?'conflict':''}" style="${tc(t.type)}left:${pct(s)}%;width:${pct(e)-pct(s)}%" data-edit="${esc(t.id)}" title="${esc(`${t.start}–${t.end} ${c?c.name:''} ${t.destination||''}`)}"><b>${esc(c?c.name:typeLabel(t.type))}</b><span>${esc(t.start)}–${esc(t.end)} ${esc(t.destination||'')}</span></button>`;
+        const[s,e]=tripRange(t);const cn=custName(t);
+        html+=`<button class="blk tt ${conf.has(t.id)?'conflict':''}" style="${tc(t.type)}left:${pct(s)}%;width:${pct(e)-pct(s)}%" data-edit="${esc(t.id)}" title="${esc(`${t.start}–${t.end} ${cn} ${t.destination||''} ${seriesTag(t)}`)}"><b>${esc(cn||typeLabel(t.type))}</b><span>${esc(t.start)}–${esc(t.end)} ${esc(t.destination||'')}</span></button>`;
       });
       html+=`</div></div>`;
     });
@@ -1002,7 +1049,7 @@ function renderDash(){
     return `<li class="q tt" style="${tc(t.type)}">
       <div class="time">${esc(t.start||'--:--')}<small>至 ${esc(t.end||'--:--')}</small></div>
       <div class="who">
-        <div>${typePill(t.type)} <b>${esc(c?c.name:'未指定客戶')}</b>${sampleChip(t)}</div>
+        <div>${typePill(t.type)} <b>${esc(custName(t)||'未指定客戶')}</b>${sampleChip(t)}${t.seriesDays>1?` <span class="chip">${seriesTag(t)}</span>`:''}</div>
         <div class="route">${esc(t.pickup||'—')} → ${esc(t.destination||'—')} · ${t.pax?esc(t.pax)+' 人':'人數未填'} · 需 <span class="chip big">${esc(t.vehicleType||'不限')}</span>${t.note?` · ${esc(t.note)}`:''}</div>
       </div>
       <div class="act">
@@ -1042,7 +1089,7 @@ function renderTrips(){
   if(!trips.length){$('#tripsTbl').innerHTML=`<tr><td class="empty"><strong>這一天還沒有車趟</strong>按上方「＋ 新增車趟」開始。</td></tr>`;return}
   $('#tripsTbl').innerHTML=`<thead><tr><th>時間</th><th>類型</th><th>客戶</th><th>上車 → 目的地</th><th>人數</th><th>需求</th><th>派車</th><th></th></tr></thead><tbody>`+
   trips.map(t=>{const c=custById(t.customerId);const v=tripVeh(t);
-    return `<tr><td class="mono">${esc(t.start)}–${esc(t.end)}</td><td>${typePill(t.type)}</td><td>${esc(c?c.name:'—')}${sampleChip(t)}</td><td>${esc(t.pickup||'—')} → ${esc(t.destination||'—')}${t.note?`<div class="muted" style="font-size:12px">${esc(t.note)}</div>`:''}</td><td class="mono">${esc(t.pax||'—')}</td><td><span class="chip big">${esc(t.vehicleType||'不限')}</span></td><td>${v?`<span class="mono">${esc(v.plate)}</span> <span class="muted">${esc(v.driver||'')}</span>${conf.has(t.id)?' <span class="chip bad">衝突</span>':''}`:'<span class="chip bad">未派</span>'}</td><td><div class="row-act"><button class="btn sm" data-edit="${esc(t.id)}">編輯</button></div></td></tr>`}).join('')+`</tbody>`;
+    return `<tr><td class="mono">${esc(t.start)}–${esc(t.end)}</td><td>${typePill(t.type)}</td><td>${esc(custName(t)||'—')}${sampleChip(t)}${t.seriesDays>1?` <span class="chip">${seriesTag(t)}</span>`:''}</td><td>${esc(t.pickup||'—')} → ${esc(t.destination||'—')}${t.note?`<div class="muted" style="font-size:12px">${esc(t.note)}</div>`:''}</td><td class="mono">${esc(t.pax||'—')}</td><td><span class="chip big">${esc(t.vehicleType||'不限')}</span></td><td>${v?`<span class="mono">${esc(v.plate)}</span> <span class="muted">${esc(v.driver||'')}</span>${conf.has(t.id)?' <span class="chip bad">衝突</span>':''}`:'<span class="chip bad">未派</span>'}</td><td><div class="row-act"><button class="btn sm" data-edit="${esc(t.id)}">編輯</button></div></td></tr>`}).join('')+`</tbody>`;
 }
 
 function renderCust(){
@@ -1084,7 +1131,8 @@ function fillTypeSelect(sel,val){
 }
 const firstType=()=>activeTypes()[0]?.id||'';
 function tripFromForm(){
-  return{date:$('#tf-date').value,type:$('#tf-type').value,customerId:$('#tf-cust').value||null,start:$('#tf-start').value,end:$('#tf-end').value,
+  const cn=$('#tf-cust').value.trim(),cc=custByName(cn);
+  return{date:$('#tf-date').value,type:$('#tf-type').value,customerId:cc?cc.id:null,customerName:cc?cc.name:cn,start:$('#tf-start').value,end:$('#tf-end').value,
     pickup:$('#tf-pickup').value.trim(),destination:$('#tf-dest').value.trim(),pax:$('#tf-pax').value?Number($('#tf-pax').value):null,
     vehicleType:$('#tf-vtype').value,vehicleId:$('#tf-veh').value||null,note:$('#tf-note').value.trim()};
 }
@@ -1104,11 +1152,15 @@ function refreshTripVehSelect(){
 function openTrip(t){
   editingTrip=t||null;
   $('#tripDlgTitle').textContent=t?'編輯車趟':'新增車趟';
-  $('#tf-date').value=t?.date||S.date;
+  setV('#tf-date',t?.date||S.date);setV('#tf-date2',t?.date||S.date);
+  $('#tf-date-t').textContent=t?'日期':'起（出發日）';$('#tf-date2-l').hidden=!!t;
+  const multi=!!(t&&t.seriesId&&t.seriesDays>1);
+  $('#tf-series-l').hidden=!multi;$('#tf-series').checked=false;
+  if(multi)$('#tf-series-t').textContent=`這是 ${t.seriesDays} 天行程的第 ${t.seriesDay} 天。勾選後，修改或刪除會套用到整個行程（日期除外）`;
   fillTypeSelect($('#tf-type'),t?.type||firstType());
-  $('#tf-cust').innerHTML=`<option value="">（未指定）</option>`+[...S.customers].sort((a,b)=>String(a.name).localeCompare(String(b.name))).map(c=>`<option value="${esc(c.id)}">${esc(c.name)}｜${esc(typeLabel(c.type))}</option>`).join('');
-  $('#tf-cust').value=t?.customerId||'';
-  $('#tf-start').value=t?.start||'07:00';$('#tf-end').value=t?.end||'08:00';
+  $('#custList').innerHTML=[...S.customers].sort((a,b)=>String(a.name).localeCompare(String(b.name))).map(c=>`<option value="${esc(c.name)}">${esc(typeLabel(c.type))}</option>`).join('');
+  $('#tf-cust').value=t?custName(t):'';custHint();
+  setV('#tf-start',t?.start||'07:00');setV('#tf-end',t?.end||'08:00');
   $('#tf-pickup').value=t?.pickup||'';$('#tf-dest').value=t?.destination||'';
   $('#tf-pax').value=t?.pax??'';$('#tf-vtype').value=t?.vehicleType||'大車';$('#tf-note').value=t?.note||'';
   $('#tf-veh').innerHTML='';$('#tf-veh').value='';
@@ -1116,17 +1168,53 @@ function openTrip(t){
   if(t?.vehicleId&&vehById(t.vehicleId))$('#tf-veh').value=t.vehicleId;
   refreshTripVehSelect();
   const del=$('#tf-del');del.hidden=!t;
-  if(t)armDelete(del,async()=>{if(await remove('trips',t.id)){$('#tripDlg').close();toast('已刪除車趟')}});
+  if(t)armDelete(del,async()=>{
+    if(t.seriesId&&$('#tf-series').checked){
+      try{const snap=await db.collection('trips').where('seriesId','==',t.seriesId).get();await Promise.all(snap.docs.map(d=>db.collection('trips').doc(d.id).delete()));$('#tripDlg').close();toast(`已刪除整個行程（${snap.size} 天）`)}catch(e){toast(errMsg(e))}
+      return;
+    }
+    if(await remove('trips',t.id)){$('#tripDlg').close();toast('已刪除車趟')}
+  });
   $('#tripDlg').showModal();
 }
 ['tf-start','tf-end','tf-vtype','tf-veh','tf-pax','tf-date'].forEach(id=>$('#'+id).addEventListener('change',refreshTripVehSelect));
-$('#tf-cust').addEventListener('change',()=>{const c=custById($('#tf-cust').value);if(!c)return;if(c.type)$('#tf-type').value=c.type;if(!$('#tf-pickup').value&&c.pickup)$('#tf-pickup').value=c.pickup});
+function custHint(){const v=$('#tf-cust').value.trim();$('#tf-cust-hint').textContent=v&&!custByName(v)?'新客戶：儲存時會一併加入客戶資料':''}
+$('#tf-cust').addEventListener('input',()=>{custHint();const c=custByName($('#tf-cust').value);if(!c)return;if(c.type)$('#tf-type').value=c.type;if(!$('#tf-pickup').value&&c.pickup)$('#tf-pickup').value=c.pickup});
+$('#tf-date').addEventListener('change',()=>{const a=$('#tf-date').value,b=$('#tf-date2').value;if(a&&(!b||b<a))setV('#tf-date2',a)});
+$('#tf-date2').addEventListener('change',()=>{const a=$('#tf-date').value,b=$('#tf-date2').value;if(b&&a&&b<a)setV('#tf-date',b)});
 $('#tripForm').addEventListener('submit',async e=>{
   e.preventDefault();const data=tripFromForm();
   if(mins(data.end)<=mins(data.start)){$('#tf-warn').textContent='結束時間需晚於出車時間';return}
-  if(editingTrip?.sample)data.sample=true;
-  data.updatedAt=new Date().toISOString();
-  if(await save('trips',editingTrip?.id,data)){$('#tripDlg').close();toast(editingTrip?'已更新車趟':'已新增車趟');if(data.date!==S.date)setDate(data.date)}
+  const d1=data.date,d2=editingTrip?d1:($('#tf-date2').value||d1);
+  if(d2<d1){$('#tf-warn').textContent='迄日不能早於起日';return}
+  const days=dateList(d1,d2);
+  if(days.length>31){$('#tf-warn').textContent='一次最多建立 31 天的行程';return}
+  const btn=e.submitter||$('#tripForm button[type=submit]');btn.disabled=true;
+  try{
+    // 新客戶：一併建立客戶資料
+    if(data.customerName&&!data.customerId){
+      try{const ref=db.collection('customers').doc();await ref.set({name:data.customerName,type:data.type,contact:'',phone:'',pickup:data.pickup||'',note:''});data.customerId=ref.id}
+      catch(err){/* 沒有新增客戶的權限時，只把名稱存在車趟上 */}
+    }
+    if(editingTrip?.sample)data.sample=true;
+    data.updatedAt=new Date().toISOString();
+    if(editingTrip){
+      const keep={seriesId:editingTrip.seriesId||null,seriesDay:editingTrip.seriesDay||null,seriesDays:editingTrip.seriesDays||null};
+      if(editingTrip.seriesId&&$('#tf-series').checked){
+        const snap=await db.collection('trips').where('seriesId','==',editingTrip.seriesId).get();
+        await Promise.all(snap.docs.map(d=>{const o=d.data();return db.collection('trips').doc(d.id).set({...data,...keep,date:o.date,seriesDay:o.seriesDay})}));
+        $('#tripDlg').close();toast(`已更新整個行程（${snap.size} 天）`);
+      }else if(await save('trips',editingTrip.id,{...data,...keep})){$('#tripDlg').close();toast('已更新車趟')}
+    }else if(days.length===1){
+      if(await save('trips',null,data)){$('#tripDlg').close();toast('已新增車趟')}
+    }else{
+      const sid='s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      await Promise.all(days.map((d,i)=>db.collection('trips').doc().set({...data,date:d,seriesId:sid,seriesDay:i+1,seriesDays:days.length})));
+      $('#tripDlg').close();toast(`已新增 ${days.length} 天的行程（${d1.slice(5).replace('-','/')}～${d2.slice(5).replace('-','/')}）`);
+    }
+    if(d1!==S.date)setDate(d1);
+  }catch(err){toast(errMsg(err))}
+  btn.disabled=false;
 });
 
 let editingCust=null;
@@ -1151,7 +1239,7 @@ $('#vf-mfg').addEventListener('change',updAge);$('#vf-mfg').addEventListener('in
 function openVeh(v){
   editingVeh=v||null;$('#vehDlgTitle').textContent=v?'編輯車輛':'新增車輛';
   $('#vf-plate').value=v?.plate||'';$('#vf-type').value=v?.type||'大車';$('#vf-seats').value=v?.seats??'';
-  $('#vf-status').value=v?.status||'可派';$('#vf-driver').value=v?.driver||'';$('#vf-phone').value=v?.phone||'';$('#vf-note').value=v?.note||'';$('#vf-mfg').value=v?.mfgDate||'';updAge();
+  $('#vf-status').value=v?.status||'可派';$('#vf-driver').value=v?.driver||'';$('#vf-phone').value=v?.phone||'';$('#vf-note').value=v?.note||'';setV('#vf-mfg',v?.mfgDate||'');updAge();
   const del=$('#vf-del');del.hidden=!v;
   if(v)armDelete(del,async()=>{if(await remove('vehicles',v.id)){$('#vehDlg').close();toast('已刪除車輛')}});
   $('#vehDlg').showModal();
@@ -1218,10 +1306,12 @@ function reportRows(){
 }
 function reportRecord(t){
   const c=custById(t.customerId),v=tripVeh(t),d=parseYmd(t.date);
-  return {'日期':t.date,'星期':WK[d.getDay()],'出車':t.start||'','結束':t.end||'','類型':typeLabel(t.type),'客戶':c?c.name:'','上車地點':t.pickup||'','目的地':t.destination||'','人數':t.pax??'','需求車種':t.vehicleType||'','車號':v?v.plate:'未派車','車種':v?v.type:'','司機':v?(v.driver||''):'','備註':t.note||''};
+  return {'日期':String(t.date).replace(/-/g,'/'),'星期':WK[d.getDay()],'出車':t.start||'','結束':t.end||'','類型':typeLabel(t.type),'客戶':custName(t),'上車地點':t.pickup||'','目的地':t.destination||'','人數':t.pax??'','需求車種':t.vehicleType||'','車號':v?v.plate:'未派車','車種':v?v.type:'','司機':v?(v.driver||''):'','備註':[seriesTag(t),t.note||''].filter(Boolean).join(' ')};
 }
 function renderReport(){
-  if($('#rpMonth').value!==RP.month)$('#rpMonth').value=RP.month;
+  {const[yy,mm]=RP.month.split('-').map(Number);const ys=$('#rpY'),ms=$('#rpM');
+   if(!ys.options.length){const cy=new Date().getFullYear();for(let y=cy+1;y>=cy-6;y--)ys.add(new Option(y+' 年',y));for(let m=1;m<=12;m++)ms.add(new Option(m+' 月',m))}
+   if(![...ys.options].some(o=>+o.value===yy))ys.add(new Option(yy+' 年',yy));ys.value=yy;ms.value=mm;}
   const sel=$('#rpVeh');const cur=RP.veh;
   sel.innerHTML=`<option value="all">全部車輛</option>`+[...S.vehicles].sort(sortVeh).map(v=>`<option value="${esc(v.id)}">${esc(v.plate)}｜${esc(v.type)}${v.driver?'｜'+esc(v.driver):''}</option>`).join('')+`<option value="none">未派車的車趟</option>`;
   sel.value=[...sel.options].some(o=>o.value===cur)?cur:'all';RP.veh=sel.value;
@@ -1241,7 +1331,7 @@ function renderReport(){
   $('#rpTbl').innerHTML=`<thead><tr><th>#</th><th>日期</th><th>出車</th><th>結束</th><th>類型</th><th>客戶</th><th>上車地點 → 目的地</th><th>人數</th><th>車號</th><th>司機</th><th>備註</th></tr></thead><tbody>`+
   rows.map((t,i)=>{const r=reportRecord(t);return `<tr><td class="mono muted">${i+1}</td><td class="mono">${esc(r['日期'].slice(5).replace('-','/'))}（${r['星期']}）</td><td class="mono">${esc(r['出車'])}</td><td class="mono">${esc(r['結束'])}</td><td>${typePill(t.type)}</td><td>${esc(r['客戶']||'—')}</td><td class="wrap">${esc(r['上車地點']||'—')} → ${esc(r['目的地']||'—')}</td><td class="mono">${esc(r['人數']||'—')}</td><td class="mono">${tripVeh(t)?esc(r['車號']):'<span class="chip bad">未派車</span>'}</td><td>${esc(r['司機']||'—')}</td><td class="wrap muted">${esc(r['備註'])}</td></tr>`}).join('')+`</tbody>`;
 }
-$('#rpMonth').addEventListener('change',e=>{if(e.target.value){RP.month=e.target.value;renderReport()}});
+['#rpY','#rpM'].forEach(id=>$(id).addEventListener('change',()=>{RP.month=`${$('#rpY').value}-${pad($('#rpM').value)}`;renderReport()}));
 $('#rpVeh').addEventListener('change',e=>{RP.veh=e.target.value;renderReport()});
 function loadXLSX(){
   if(window.XLSX)return Promise.resolve(window.XLSX);
@@ -1416,6 +1506,73 @@ $('#groupForm').addEventListener('submit',async e=>{
   if(await save('groups',editingGroup?.id,{name,order:Number($('#gf-order').value)||0,note:$('#gf-note').value.trim()})){$('#groupDlg').close();toast('已儲存群組')}
 });
 
+/* ---------- guided tour ---------- */
+const TOUR_KEY=()=>'dispatch.tour.v1:'+S.email;
+const isMobile=()=>matchMedia('(max-width:860px)').matches;
+function tourSteps(){
+  return [
+    {title:'歡迎使用派車管理系統',text:'接下來用一分鐘帶你認識畫面。可以隨時按「略過教學」，之後從右上角頭像選單的「新手教學」重看。'},
+    {el:()=>isMobile()?$('#menuBtn'):$('#nav'),title:'功能選單',text:isMobile()?'點這個按鈕打開功能選單，所有功能都在這裡。':'所有功能都在左側選單。點大項名稱（例如「派車作業」）可以展開或收起底下的子項。'},
+    {el:()=>isMobile()?null:$('#collapseBtn'),title:'收合選單',text:'點這個小圓圈可以把選單縮成只剩圖示，讓右邊畫面更寬；再點一次就展開。'},
+    {el:()=>$('#datebar'),title:'切換日期',text:'用「‹ ›」看前一天、後一天，也可以直接點日期選擇，「今天」會回到今天。下面所有資料都會跟著換成那一天。'},
+    {el:()=>$('#addTrip'),title:'新增車趟',text:'有新的校車、補習班、旅遊或進香行程，按這裡新增。填好時間、客戶、上下車地點；車輛可以先不選，之後再派。'},
+    {el:()=>$('#copyPrev'),title:'複製前一日車趟',text:'每天固定的校車、補習班班次，按一下就從前一天整批帶過來，原本派的車也會保留。'},
+    {el:()=>$('#stats'),title:'今日統計',text:'一眼看到今天共幾趟、已派幾趟、還有幾趟沒派，以及閒置的車和時段衝突。「待派車」和「時段衝突」不是 0 時要特別注意。'},
+    {el:()=>$('#timeline')?.closest('section'),title:'已派車時間表',text:'每台車一列，大車、中車分開排。色塊是派好的車趟，顏色代表類型；紅線是現在時間。點色塊可以修改，紅框表示同一台車時間重疊了。'},
+    {el:()=>$('#queue')?.closest('section'),title:'未派車趟',text:'還沒安排車輛的車趟會列在這裡。在右邊選一台車，按「派車」，它就會移到上面的時間表。選單會把車種相符、有空的車排在前面。'},
+    {el:()=>$('#userChip'),title:'個人選單',text:'點頭像可以看自己的帳號、修改密碼（帳號密碼登入的人）、重看新手教學，或登出。'},
+    {title:'完成！',text:'這樣就認識整個畫面了。建議先到「基本資料」建立車籍和客戶資料，再回到儀表板新增車趟。'},
+  ];
+}
+const T={steps:[],i:0,on:false};
+function visible(el){if(!el)return false;const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&!el.closest('[hidden]')}
+function startTour(){
+  if(!can('dash'))return;
+  if(S.tab!=='dash'){S.tab='dash';render()}
+  setUserMenu(false);setNavOpen(false);
+  T.steps=tourSteps().filter(st=>!st.el||visible(st.el()));T.i=0;T.on=true;
+  $('#tour').hidden=false;showStep();
+}
+function endTour(){T.on=false;$('#tour').hidden=true;try{localStorage.setItem(TOUR_KEY(),'1')}catch(e){}}
+function placeStep(){
+  if(!T.on)return;
+  const st=T.steps[T.i],hole=$('#tourHole'),tip=$('#tourTip');
+  const el=st.el&&st.el();
+  const vw=innerWidth,vh=innerHeight,tw=tip.offsetWidth,th=tip.offsetHeight,gap=14;
+  if(!el){hole.classList.add('center');tip.style.left=Math.max(16,(vw-tw)/2)+'px';tip.style.top=Math.max(16,(vh-th)/2)+'px';return}
+  hole.classList.remove('center');
+  const r=el.getBoundingClientRect(),pad=6;
+  const top=Math.max(4,r.top-pad),left=Math.max(4,r.left-pad),bottom=Math.min(vh-4,r.bottom+pad),right=Math.min(vw-4,r.right+pad);
+  Object.assign(hole.style,{top:top+'px',left:left+'px',width:(right-left)+'px',height:(bottom-top)+'px'});
+  let x,y;
+  if(vh-bottom>=th+gap){y=bottom+gap;x=left}
+  else if(top>=th+gap){y=top-th-gap;x=left}
+  else if(vw-right>=tw+gap){x=right+gap;y=top}
+  else if(left>=tw+gap){x=left-tw-gap;y=top}
+  else{x=(vw-tw)/2;y=vh-th-16}
+  tip.style.left=Math.min(Math.max(16,x),vw-tw-16)+'px';tip.style.top=Math.min(Math.max(16,y),vh-th-16)+'px';
+}
+function showStep(){
+  const st=T.steps[T.i],n=T.steps.length;
+  $('#tourStep').textContent=`${T.i+1} / ${n}`;$('#tourTitle').textContent=st.title;$('#tourText').textContent=st.text;
+  $('#tourPrev').hidden=T.i===0;$('#tourNext').textContent=T.i===n-1?'開始使用':'下一步';$('#tourSkip').hidden=T.i===n-1;
+  const el=st.el&&st.el();
+  if(el)el.scrollIntoView({block:'nearest',inline:'nearest'});
+  requestAnimationFrame(()=>{placeStep();$('#tourNext').focus()});
+}
+$('#tourNext').onclick=()=>{if(T.i<T.steps.length-1){T.i++;showStep()}else endTour()};
+$('#tourPrev').onclick=()=>{if(T.i>0){T.i--;showStep()}};
+$('#tourSkip').onclick=endTour;
+addEventListener('resize',placeStep);
+document.addEventListener('scroll',placeStep,true);
+document.addEventListener('keydown',e=>{if(!T.on)return;if(e.key==='Escape')endTour();else if(e.key==='ArrowRight')$('#tourNext').click();else if(e.key==='ArrowLeft')$('#tourPrev').click()});
+$('#userTour').onclick=()=>startTour();
+function maybeAutoTour(){
+  let seen=false;try{seen=localStorage.getItem(TOUR_KEY())==='1'}catch(e){seen=true}
+  if(seen||T.on||!can('dash'))return;
+  const go=()=>{if(S.ready.v&&S.ready.t&&S.roles.length)setTimeout(startTour,500);else setTimeout(go,300)};go();
+}
+
 /* user menu */
 function setUserMenu(o){$('#userMenu').hidden=!o;$('#userChip').setAttribute('aria-expanded',String(o))}
 $('#userChip').onclick=e=>{e.stopPropagation();setUserMenu($('#userMenu').hidden)};
@@ -1428,6 +1585,18 @@ function setNavOpen(o){document.body.classList.toggle('nav-open',o)}
 $('#menuBtn').onclick=()=>setNavOpen(true);
 $('#scrim').onclick=()=>setNavOpen(false);
 $('#collapseBtn').onclick=()=>{navCollapsed=!navCollapsed;document.body.classList.toggle('nav-collapsed',navCollapsed);$('#collapseBtn').setAttribute('aria-label',navCollapsed?'展開選單':'收合選單');$('#collapseBtn').title=navCollapsed?'展開選單':'收合選單';try{localStorage.setItem('dispatch.nav',navCollapsed?'1':'0')}catch(e){}};
+
+/* ---------- date / time pickers（年/月/日、24 小時制，不受電腦語系影響） ---------- */
+(function initPickers(){
+  const FP=window.flatpickr;if(!FP)return;
+  const L=(FP.l10ns&&FP.l10ns.zh_tw)||'default';
+  const inDlg=(inst)=>{const dlg=inst.input.closest('dialog');if(!dlg)return;
+    requestAnimationFrame(()=>{const r=(inst.altInput||inst.input).getBoundingClientRect(),d=dlg.getBoundingClientRect(),c=inst.calendarContainer;
+      c.style.top=(r.bottom-d.top+dlg.scrollTop+4)+'px';c.style.left=Math.max(8,Math.min(r.left-d.left,d.width-c.offsetWidth-8))+'px';c.style.right='auto'})};
+  const base=el=>({locale:L,disableMobile:true,allowInput:true,appendTo:el.closest('dialog')||undefined,onOpen:[(a,b,i)=>inDlg(i)]});
+  ['#datePick','#tf-date','#tf-date2','#vf-mfg'].forEach(sel=>{const el=$(sel);FP(el,{...base(el),dateFormat:'Y-m-d',altInput:true,altFormat:'Y/m/d',ariaDateFormat:'Y年n月j日'})});
+  ['#tf-start','#tf-end'].forEach(sel=>{const el=$(sel);FP(el,{...base(el),enableTime:true,noCalendar:true,time_24hr:true,dateFormat:'H:i',minuteIncrement:5})});
+})();
 
 /* ---------- events ---------- */
 document.addEventListener('click',async e=>{
@@ -1467,7 +1636,7 @@ $('#copyPrev').onclick=async()=>{
     const have=new Set(S.trips.map(t=>`${t.customerId}|${t.start}|${t.type}`));
     let n=0;
     for(const d of snap.docs){const t=d.data();const key=`${t.customerId}|${t.start}|${t.type}`;if(have.has(key))continue;
-      const{sample,...rest}=t;await db.collection('trips').doc().set({...rest,date:S.date,updatedAt:new Date().toISOString()});n++}
+      const{sample,seriesId,seriesDay,seriesDays,...rest}=t;await db.collection('trips').doc().set({...rest,date:S.date,updatedAt:new Date().toISOString()});n++}
     toast(n?`已從前一日複製 ${n} 趟（保留原派車）`:'前一日車趟已全部存在');
   }catch(e){toast(errMsg(e))}
 };
@@ -1559,7 +1728,7 @@ function boot(){
       if(m.active===false){denyLogin('你的帳號已被停用，請聯絡系統管理員。');return}
       S.me={...m,email:S.email};S.authz='ok';
       $('#syncState').textContent='已連線 · 資料即時同步';
-      startData();render();
+      startData();render();maybeAutoTour();
     },e=>{denyLogin('無法確認你的權限：'+(e.code||e.message))}));
   });
   setInterval(()=>{if(S.tab==='dash'&&S.date===ymd(new Date())&&S.authz==='ok')renderDash()},60000);

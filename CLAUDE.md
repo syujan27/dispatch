@@ -14,7 +14,7 @@
 ## 資料表（Firestore collections）
 - `vehicles`（畫面名稱：車籍資料）：plate、type（大車/中車）、seats、mfgDate（出廠日 YYYY-MM-DD；「迄今」= X 年 X 個月（不到天），畫面即時計算不存檔）、status（可派/維修/停用）、driver、phone、note
 - `customers`：name、type（tripTypes 的 id）、contact、phone、pickup、note
-- `trips`：date（YYYY-MM-DD）、type、customerId、start、end（HH:MM）、pickup、destination、pax、vehicleType、vehicleId（未派車時為 null）、note、updatedAt
+- `trips`：date（YYYY-MM-DD）、type、customerId、customerName（輸入的新客戶名稱；有權限時會同時建立 customers）、seriesId／seriesDay／seriesDays（多天行程：起迄日期每天各一筆）、start、end（HH:MM）、pickup、destination、pax、vehicleType、vehicleId（未派車時為 null）、note、updatedAt
 - `tripTypes`：label、color（#rrggbb）、order、active。預設 id 為 school / cram / tour / pilgrim；資料表是空的時，第一位登入者會自動寫入預設值。
 - `members/{email 小寫}`：email（Google 為 Gmail；帳號密碼為 帳號@authDomain）、name、roleId、groupId、active
 - `roles`：name、order、canManage（可管理權限）、modules（可瀏覽功能 key 陣列）。預設角色：admin 系統管理員（固定全部）、manager 經理、assistant 特助、leader 組長、staff 組員
@@ -40,7 +40,13 @@
 - 收合按鈕是放在選單與主畫面分隔線上的小圓圈（‹ / ›）。
 - 登入者資訊（人頭圖示＋姓名＋角色·群組）放在頁面標題列最右側；點開可登出。手機版只顯示頭像。
 
+## 日期與時間
+- 日期一律顯示 年/月/日、時間 24 小時制，不受電腦語系影響：用 flatpickr 4.6.13（jsdelivr，含 zh-tw 語系），altInput 顯示 Y/m/d，底層值仍是 YYYY-MM-DD；程式設定值要用 `setV()`。月報表月份用「年」「月」兩個下拉。
+- 介面文字不要提到「角色／權限決定能看到什麼」，不讓使用者感覺有權限之分。
+
 ## 已有功能
+- 新手教學（認識畫面，11 步，第一次登入自動出現；頭像選單可重看；記錄在 localStorage `dispatch.tour.v1:<email>`）
+- 新增車趟可選起迄日期（最多 31 天）、客戶可輸入或下拉選擇
 - 新增、編輯、刪除車趟、客戶、車輛（刪除要按兩次確認）
 - 複製前一日車趟（保留原派車）
 - 派車時檢查時段衝突和座位數
