@@ -1559,7 +1559,7 @@ function tourSteps(){
 }
 const T={steps:[],i:0,on:false};
 function visible(el){if(!el)return false;const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&!el.closest('[hidden]')}
-function startTour(){
+function startTour(){try{sessionStorage.setItem('demo.tourSeen','1')}catch(e){}
   if(!can('dash'))return;
   if(S.tab!=='dash'){S.tab='dash';render()}
   setUserMenu(false);setNavOpen(false);
@@ -1601,7 +1601,7 @@ document.addEventListener('scroll',placeStep,true);
 document.addEventListener('keydown',e=>{if(!T.on)return;if(e.key==='Escape')endTour();else if(e.key==='ArrowRight')$('#tourNext').click();else if(e.key==='ArrowLeft')$('#tourPrev').click()});
 $('#userTour').onclick=()=>startTour();
 function maybeAutoTour(){
-  let seen=false;
+  let seen=false;try{seen=sessionStorage.getItem('demo.tourSeen')==='1'}catch(e){}
   if(seen||T.on||maybeAutoTour.waiting)return;
   maybeAutoTour.waiting=true;let tries=0;
   // 等角色和資料都載入後再判斷（角色資料比人員資料晚到）
