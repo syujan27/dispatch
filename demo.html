@@ -156,6 +156,7 @@ dialog .flatpickr-calendar{position:absolute}
 .flatpickr-day.selected,.flatpickr-day.selected:hover,.flatpickr-day.today.selected{background:var(--ocean);border-color:var(--ocean);color:var(--ocean-ink)}
 .flatpickr-day.today{border-color:var(--ocean)}
 .hint-box{grid-column:1/-1;font-size:13px;color:var(--ocean);background:color-mix(in srgb,var(--ocean) 9%,transparent);border-radius:8px;padding:7px 10px}
+.demo-banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.demo-banner span{flex:1;min-width:200px}
 .gate{padding:60px 16px;text-align:center;color:var(--muted)}
 
 .banner{margin-top:14px;padding:10px 14px;border-radius:10px;background:var(--sand);font-size:13px}
@@ -290,7 +291,7 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
 <div class="rail" id="rail" hidden><button class="collapse-btn" id="collapseBtn" aria-label="收合選單" title="收合選單"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button></div>
 <div class="scrim" id="scrim"></div>
 <main class="wrap">
-  <div id="banner" class="banner"><b>展示版</b>：這裡使用範例資料，可以自由操作所有功能；修改不會儲存，重新整理就會還原。</div>
+  <div id="banner" class="banner demo-banner"><span><b>展示版</b>：這裡使用範例資料，可以自由操作所有功能；修改不會儲存，重新整理就會還原。</span><button class="btn sm" id="demoTour" type="button">看新手教學</button></div>
   <div class="page-h" id="pageH"><button class="menu-btn" id="menuBtn" aria-label="開啟選單" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><h2 id="pageTitle">儀表板</h2><span class="crumb" id="pageCrumb">派車作業</span><span class="spacer"></span>
       <div class="user" id="userBox" hidden>
         <button class="user-chip" id="userChip" aria-haspopup="true" aria-expanded="false">
@@ -1600,7 +1601,7 @@ document.addEventListener('scroll',placeStep,true);
 document.addEventListener('keydown',e=>{if(!T.on)return;if(e.key==='Escape')endTour();else if(e.key==='ArrowRight')$('#tourNext').click();else if(e.key==='ArrowLeft')$('#tourPrev').click()});
 $('#userTour').onclick=()=>startTour();
 function maybeAutoTour(){
-  let seen=false;try{seen=localStorage.getItem(TOUR_KEY())==='1'}catch(e){seen=true}
+  let seen=false;
   if(seen||T.on||maybeAutoTour.waiting)return;
   maybeAutoTour.waiting=true;let tries=0;
   // 等角色和資料都載入後再判斷（角色資料比人員資料晚到）
@@ -1827,6 +1828,7 @@ $('#importFile').onchange=async e=>{
     toast(`已匯入 ${n} 筆資料（同編號的資料會被覆蓋）`);
   }catch(err){toast(err instanceof SyntaxError?'檔案格式不對，請選擇匯出的 .json 備份檔':errMsg(err))}
 };
+$('#demoTour').onclick=()=>startTour();
 boot();
 </script>
 </body>
