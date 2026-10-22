@@ -1569,8 +1569,14 @@ document.addEventListener('keydown',e=>{if(!T.on)return;if(e.key==='Escape')endT
 $('#userTour').onclick=()=>startTour();
 function maybeAutoTour(){
   let seen=false;try{seen=localStorage.getItem(TOUR_KEY())==='1'}catch(e){seen=true}
-  if(seen||T.on||!can('dash'))return;
-  const go=()=>{if(S.ready.v&&S.ready.t&&S.roles.length)setTimeout(startTour,500);else setTimeout(go,300)};go();
+  if(seen||T.on||maybeAutoTour.waiting)return;
+  maybeAutoTour.waiting=true;let tries=0;
+  // 等角色和資料都載入後再判斷（角色資料比人員資料晚到）
+  const go=()=>{
+    if(S.authz!=='ok'){maybeAutoTour.waiting=false;return}
+    if(S.ready.v&&S.ready.t&&S.roles.length&&myRole()){maybeAutoTour.waiting=false;if(can('dash'))setTimeout(startTour,500);return}
+    if(++tries<100)setTimeout(go,300);else maybeAutoTour.waiting=false;
+  };go();
 }
 
 /* user menu */
