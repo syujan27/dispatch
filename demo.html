@@ -155,6 +155,7 @@ table.rp td.wrap{white-space:normal;min-width:160px}
 dialog .flatpickr-calendar{position:absolute}
 .flatpickr-day.selected,.flatpickr-day.selected:hover,.flatpickr-day.today.selected{background:var(--ocean);border-color:var(--ocean);color:var(--ocean-ink)}
 .flatpickr-day.today{border-color:var(--ocean)}
+.hint-box{grid-column:1/-1;font-size:13px;color:var(--ocean);background:color-mix(in srgb,var(--ocean) 9%,transparent);border-radius:8px;padding:7px 10px}
 .gate{padding:60px 16px;text-align:center;color:var(--muted)}
 
 .banner{margin-top:14px;padding:10px 14px;border-radius:10px;background:var(--sand);font-size:13px}
@@ -419,12 +420,12 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
     <div class="dlg-b">
       <label id="tf-date-l"><span id="tf-date-t">起（出發日）</span><input type="text" id="tf-date" placeholder="年/月/日" required></label>
       <label id="tf-date2-l">迄（回程日）<input type="text" id="tf-date2" placeholder="年/月/日"></label>
-      <label class="full chk" id="tf-series-l" hidden><input type="checkbox" id="tf-series"> <span id="tf-series-t"></span></label>
+      <div class="full hint-box" id="tf-series-l" hidden></div>
       <label>客戶<input type="text" id="tf-cust" autofocus list="custList" placeholder="輸入或選擇客戶" autocomplete="off"><small class="hint" id="tf-cust-hint"></small></label>
       <datalist id="custList"></datalist>
       <label>車趟類型<select id="tf-type" required></select></label>
-      <label>出車時間<input type="text" id="tf-start" placeholder="時:分" inputmode="numeric" required></label>
-      <label>結束時間<input type="text" id="tf-end" placeholder="時:分" inputmode="numeric" required></label>
+      <label><span id="tf-start-t">出車時間</span><input type="text" id="tf-start" placeholder="時:分" inputmode="numeric" required></label>
+      <label><span id="tf-end-t">結束時間</span><input type="text" id="tf-end" placeholder="時:分" inputmode="numeric" required></label>
       <label>上車地點<input type="text" id="tf-pickup" placeholder="例：學校側門"></label>
       <label>目的地 / 路線<input type="text" id="tf-dest" placeholder="例：九份 → 金瓜石"></label>
       <label>人數<input type="number" id="tf-pax" min="0" inputmode="numeric"></label>
@@ -942,9 +943,25 @@ const dateList=(a,b)=>{const out=[];let d=a;while(d<=b&&out.length<62){out.push(
 const custById=id=>S.customers.find(c=>c.id===id);
 const usable=v=>v&&(v.status||'可派')==='可派';
 function tripVeh(t){const v=t.vehicleId&&vehById(t.vehicleId);return v||null}
-function tripRange(t){const s=mins(t.start)??0;let e=mins(t.end);if(e==null||e<=s)e=s+60;return[s,e]}
+function tripRange(t){
+  const n=t.seriesDays||1,k=t.seriesDay||1,s=mins(t.start)??0,e0=mins(t.end);
+  if(n>1){if(k===1)return[s,1440];if(k===n)return[0,e0??1440];return[0,1440]}
+  let e=e0;if(e==null||e<=s)e=s+60;return[s,e];
+}
+const hhmm=m=>m>=1440?'24:00':`${pad(Math.floor(m/60))}:${pad(m%60)}`;
+function timeText(t){
+  const n=t.seriesDays||1,k=t.seriesDay||1;
+  if(n<=1)return `${t.start||'--:--'}–${t.end||'--:--'}`;
+  if(k===1)return `${t.start} 出發`;
+  if(k===n)return `${t.end} 回程`;
+  return '全天';
+}
+function seriesRange(t){
+  if(!(t&&t.seriesId&&t.seriesDays>1))return[t.date,t.date];
+  return[shift(t.date,-(t.seriesDay-1)),shift(t.date,t.seriesDays-t.seriesDay)];
+}
 function overlaps(a,b){const[as,ae]=tripRange(a),[bs,be]=tripRange(b);return as<be&&bs<ae}
-function conflictsFor(trip,vehicleId){return S.trips.filter(o=>o.id!==trip.id&&o.vehicleId===vehicleId&&overlaps(o,trip))}
+function conflictsFor(trip,vehicleId){return S.trips.filter(o=>o.id!==trip.id&&!(trip.seriesId&&o.seriesId===trip.seriesId)&&o.vehicleId===vehicleId&&overlaps(o,trip))}
 function conflictIds(){
   const ids=new Set();const byV={};
   S.trips.forEach(t=>{if(tripVeh(t))(byV[t.vehicleId]??=[]).push(t)});
@@ -952,7 +969,7 @@ function conflictIds(){
   return ids;
 }
 const sortVeh=(a,b)=>(a.type===b.type?0:a.type==='大車'?-1:1)||String(a.plate).localeCompare(String(b.plate));
-const sortTrip=(a,b)=>(mins(a.start)??0)-(mins(b.start)??0);
+const sortTrip=(a,b)=>tripRange(a)[0]-tripRange(b)[0];
 
 /* ---------- render ---------- */
 function render(){
@@ -1030,7 +1047,7 @@ function renderDash(){
       if(isToday&&nowM>=h0*60&&nowM<=h1*60)html+=`<span class="now" style="left:${pct(nowM)}%"></span>`;
       assigned.filter(t=>t.vehicleId===v.id).forEach(t=>{
         const[s,e]=tripRange(t);const cn=custName(t);
-        html+=`<button class="blk tt ${conf.has(t.id)?'conflict':''}" style="${tc(t.type)}left:${pct(s)}%;width:${pct(e)-pct(s)}%" data-edit="${esc(t.id)}" title="${esc(`${t.start}–${t.end} ${cn} ${t.destination||''} ${seriesTag(t)}`)}"><b>${esc(cn||typeLabel(t.type))}</b><span>${esc(t.start)}–${esc(t.end)} ${esc(t.destination||'')}</span></button>`;
+        html+=`<button class="blk tt ${conf.has(t.id)?'conflict':''}" style="${tc(t.type)}left:${pct(s)}%;width:${pct(e)-pct(s)}%" data-edit="${esc(t.id)}" title="${esc(`${timeText(t)} ${cn} ${t.destination||''} ${seriesTag(t)}`)}"><b>${esc(cn||typeLabel(t.type))}</b><span>${esc(timeText(t))}${t.seriesDays>1?' · '+esc(seriesTag(t)):''} ${esc(t.destination||'')}</span></button>`;
       });
       html+=`</div></div>`;
     });
@@ -1047,7 +1064,7 @@ function renderDash(){
     const c=custById(t.customerId);
     const opts=vehicleOptions(t,null);
     return `<li class="q tt" style="${tc(t.type)}">
-      <div class="time">${esc(t.start||'--:--')}<small>至 ${esc(t.end||'--:--')}</small></div>
+      <div class="time">${esc(hhmm(tripRange(t)[0]))}<small>至 ${esc(hhmm(tripRange(t)[1]))}</small></div>
       <div class="who">
         <div>${typePill(t.type)} <b>${esc(custName(t)||'未指定客戶')}</b>${sampleChip(t)}${t.seriesDays>1?` <span class="chip">${seriesTag(t)}</span>`:''}</div>
         <div class="route">${esc(t.pickup||'—')} → ${esc(t.destination||'—')} · ${t.pax?esc(t.pax)+' 人':'人數未填'} · 需 <span class="chip big">${esc(t.vehicleType||'不限')}</span>${t.note?` · ${esc(t.note)}`:''}</div>
@@ -1089,7 +1106,7 @@ function renderTrips(){
   if(!trips.length){$('#tripsTbl').innerHTML=`<tr><td class="empty"><strong>這一天還沒有車趟</strong>按上方「＋ 新增車趟」開始。</td></tr>`;return}
   $('#tripsTbl').innerHTML=`<thead><tr><th>時間</th><th>類型</th><th>客戶</th><th>上車 → 目的地</th><th>人數</th><th>需求</th><th>派車</th><th></th></tr></thead><tbody>`+
   trips.map(t=>{const c=custById(t.customerId);const v=tripVeh(t);
-    return `<tr><td class="mono">${esc(t.start)}–${esc(t.end)}</td><td>${typePill(t.type)}</td><td>${esc(custName(t)||'—')}${sampleChip(t)}${t.seriesDays>1?` <span class="chip">${seriesTag(t)}</span>`:''}</td><td>${esc(t.pickup||'—')} → ${esc(t.destination||'—')}${t.note?`<div class="muted" style="font-size:12px">${esc(t.note)}</div>`:''}</td><td class="mono">${esc(t.pax||'—')}</td><td><span class="chip big">${esc(t.vehicleType||'不限')}</span></td><td>${v?`<span class="mono">${esc(v.plate)}</span> <span class="muted">${esc(v.driver||'')}</span>${conf.has(t.id)?' <span class="chip bad">衝突</span>':''}`:'<span class="chip bad">未派</span>'}</td><td><div class="row-act"><button class="btn sm" data-edit="${esc(t.id)}">編輯</button></div></td></tr>`}).join('')+`</tbody>`;
+    return `<tr><td class="mono">${esc(timeText(t))}</td><td>${typePill(t.type)}</td><td>${esc(custName(t)||'—')}${sampleChip(t)}${t.seriesDays>1?` <span class="chip">${seriesTag(t)}</span>`:''}</td><td>${esc(t.pickup||'—')} → ${esc(t.destination||'—')}${t.note?`<div class="muted" style="font-size:12px">${esc(t.note)}</div>`:''}</td><td class="mono">${esc(t.pax||'—')}</td><td><span class="chip big">${esc(t.vehicleType||'不限')}</span></td><td>${v?`<span class="mono">${esc(v.plate)}</span> <span class="muted">${esc(v.driver||'')}</span>${conf.has(t.id)?' <span class="chip bad">衝突</span>':''}`:'<span class="chip bad">未派</span>'}</td><td><div class="row-act"><button class="btn sm" data-edit="${esc(t.id)}">編輯</button></div></td></tr>`}).join('')+`</tbody>`;
 }
 
 function renderCust(){
@@ -1118,7 +1135,7 @@ function renderVeh(){
 
 /* ---------- dialogs ---------- */
 function armDelete(btn,fn){
-  btn.classList.remove('armed');btn.textContent='刪除';
+  btn.classList.remove('armed');btn.textContent=btn.dataset.label||'刪除';
   btn.onclick=()=>{if(!btn.classList.contains('armed')){btn.classList.add('armed');btn.textContent='再按一次確認刪除';return}fn()};
 }
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>b.closest('dialog').close()));
@@ -1137,26 +1154,30 @@ function tripFromForm(){
     vehicleType:$('#tf-vtype').value,vehicleId:$('#tf-veh').value||null,note:$('#tf-note').value.trim()};
 }
 function refreshTripVehSelect(){
-  const t={...tripFromForm(),id:editingTrip?.id};
+  const f=tripFromForm(),d1=f.date,d2=$('#tf-date2').value||d1,n=dateList(d1,d2).length;
+  // 衝突檢查以目前畫面上的日期為準（行程有包含這一天時）
+  const inView=S.date>=d1&&S.date<=d2;
+  const k=inView?dateList(d1,S.date).length:1;
+  const t={...f,date:inView?S.date:d1,id:editingTrip?.id||'__new',seriesId:editingTrip?.seriesId||null,seriesDay:n>1?k:null,seriesDays:n>1?n:null};
   const cur=$('#tf-veh').value||null;
-  // conflict check only valid for the date being viewed
-  $('#tf-veh').innerHTML=vehicleOptions(t.date===S.date?t:{...t,id:'__x'},cur).replace('選擇車輛…','（暫不派車）');
+  $('#tf-veh').innerHTML=vehicleOptions(inView?t:{...t,id:'__x',date:'0000-00-00'},cur).replace('選擇車輛…','（暫不派車）');
   if(cur)$('#tf-veh').value=cur;
   const w=[];
-  if(t.vehicleId&&t.date===S.date){const c=conflictsFor(t,t.vehicleId);if(c.length)w.push(`此車在 ${c.map(x=>x.start+'–'+x.end).join('、')} 已有車趟`)}
+  if(t.vehicleId&&inView){const c=conflictsFor(t,t.vehicleId);if(c.length)w.push(`此車在 ${c.map(x=>x.start+'–'+x.end).join('、')} 已有車趟`)}
   const v=t.vehicleId&&vehById(t.vehicleId);
   if(v&&t.pax&&v.seats&&t.pax>v.seats)w.push(`人數 ${t.pax} 超過座位 ${v.seats}`);
-  if(t.start&&t.end&&mins(t.end)<=mins(t.start))w.push('結束時間需晚於出車時間');
+  if(t.start&&t.end&&mins(t.end)<=mins(t.start)&&!($('#tf-date2').value>$('#tf-date').value))w.push('結束時間需晚於出車時間');
   $('#tf-warn').textContent=w.join('；');
 }
 function openTrip(t){
   editingTrip=t||null;
   $('#tripDlgTitle').textContent=t?'編輯車趟':'新增車趟';
-  setV('#tf-date',t?.date||S.date);setV('#tf-date2',t?.date||S.date);
-  $('#tf-date-t').textContent=t?'日期':'起（出發日）';$('#tf-date2-l').hidden=!!t;
+  const[r1,r2]=t?seriesRange(t):[S.date,S.date];
+  setV('#tf-date',r1);setV('#tf-date2',r2);
   const multi=!!(t&&t.seriesId&&t.seriesDays>1);
-  $('#tf-series-l').hidden=!multi;$('#tf-series').checked=false;
-  if(multi)$('#tf-series-t').textContent=`這是 ${t.seriesDays} 天行程的第 ${t.seriesDay} 天。勾選後，修改或刪除會套用到整個行程（日期除外）`;
+  $('#tf-series-l').hidden=!multi;
+  if(multi)$('#tf-series-l').textContent=`這是 ${t.seriesDays} 天的行程（目前點選第 ${t.seriesDay} 天）。修改會套用到每一天；調整起迄日期會自動增減天數。`;
+  setTimeout(dateLabels);
   fillTypeSelect($('#tf-type'),t?.type||firstType());
   $('#custList').innerHTML=[...S.customers].sort((a,b)=>String(a.name).localeCompare(String(b.name))).map(c=>`<option value="${esc(c.name)}">${esc(typeLabel(c.type))}</option>`).join('');
   $('#tf-cust').value=t?custName(t):'';custHint();
@@ -1169,7 +1190,7 @@ function openTrip(t){
   refreshTripVehSelect();
   const del=$('#tf-del');del.hidden=!t;
   if(t)armDelete(del,async()=>{
-    if(t.seriesId&&$('#tf-series').checked){
+    if(t.seriesId){
       try{const snap=await db.collection('trips').where('seriesId','==',t.seriesId).get();await Promise.all(snap.docs.map(d=>db.collection('trips').doc(d.id).delete()));$('#tripDlg').close();toast(`已刪除整個行程（${snap.size} 天）`)}catch(e){toast(errMsg(e))}
       return;
     }
@@ -1180,15 +1201,18 @@ function openTrip(t){
 ['tf-start','tf-end','tf-vtype','tf-veh','tf-pax','tf-date'].forEach(id=>$('#'+id).addEventListener('change',refreshTripVehSelect));
 function custHint(){const v=$('#tf-cust').value.trim();$('#tf-cust-hint').textContent=v&&!custByName(v)?'新客戶：儲存時會一併加入客戶資料':''}
 $('#tf-cust').addEventListener('input',()=>{custHint();const c=custByName($('#tf-cust').value);if(!c)return;if(c.type)$('#tf-type').value=c.type;if(!$('#tf-pickup').value&&c.pickup)$('#tf-pickup').value=c.pickup});
-$('#tf-date').addEventListener('change',()=>{const a=$('#tf-date').value,b=$('#tf-date2').value;if(a&&(!b||b<a))setV('#tf-date2',a)});
-$('#tf-date2').addEventListener('change',()=>{const a=$('#tf-date').value,b=$('#tf-date2').value;if(b&&a&&b<a)setV('#tf-date',b)});
+function dateLabels(){const multi=$('#tf-date2').value>$('#tf-date').value;
+  $('#tf-start-t').textContent=multi?'出發時間（第一天）':'出車時間';$('#tf-end-t').textContent=multi?'回程時間（最後一天）':'結束時間';
+  const del=$('#tf-del');if(editingTrip)del.dataset.label=editingTrip.seriesDays>1?`刪除整個行程（${editingTrip.seriesDays} 天）`:'刪除';if(!del.classList.contains('armed'))del.textContent=del.dataset.label;}
+$('#tf-date').addEventListener('change',()=>{const a=$('#tf-date').value,b=$('#tf-date2').value;if(a&&(!b||b<a))setV('#tf-date2',a);dateLabels();refreshTripVehSelect()});
+$('#tf-date2').addEventListener('change',()=>{const a=$('#tf-date').value,b=$('#tf-date2').value;if(b&&a&&b<a)setV('#tf-date',b);dateLabels();refreshTripVehSelect()});
 $('#tripForm').addEventListener('submit',async e=>{
   e.preventDefault();const data=tripFromForm();
-  if(mins(data.end)<=mins(data.start)){$('#tf-warn').textContent='結束時間需晚於出車時間';return}
-  const d1=data.date,d2=editingTrip?d1:($('#tf-date2').value||d1);
+  const d1=data.date,d2=$('#tf-date2').value||d1;
   if(d2<d1){$('#tf-warn').textContent='迄日不能早於起日';return}
   const days=dateList(d1,d2);
-  if(days.length>31){$('#tf-warn').textContent='一次最多建立 31 天的行程';return}
+  if(days.length>31){$('#tf-warn').textContent='一個行程最多 31 天';return}
+  if(days.length===1&&mins(data.end)<=mins(data.start)){$('#tf-warn').textContent='結束時間需晚於出車時間';return}
   const btn=e.submitter||$('#tripForm button[type=submit]');btn.disabled=true;
   try{
     // 新客戶：一併建立客戶資料
@@ -1198,21 +1222,29 @@ $('#tripForm').addEventListener('submit',async e=>{
     }
     if(editingTrip?.sample)data.sample=true;
     data.updatedAt=new Date().toISOString();
+    const n=days.length,sid=n>1?(editingTrip?.seriesId||('s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6))):null;
+    const meta=(d,i)=>({date:d,seriesId:sid,seriesDay:n>1?i+1:null,seriesDays:n>1?n:null});
     if(editingTrip){
-      const keep={seriesId:editingTrip.seriesId||null,seriesDay:editingTrip.seriesDay||null,seriesDays:editingTrip.seriesDays||null};
-      if(editingTrip.seriesId&&$('#tf-series').checked){
-        const snap=await db.collection('trips').where('seriesId','==',editingTrip.seriesId).get();
-        await Promise.all(snap.docs.map(d=>{const o=d.data();return db.collection('trips').doc(d.id).set({...data,...keep,date:o.date,seriesDay:o.seriesDay})}));
-        $('#tripDlg').close();toast(`已更新整個行程（${snap.size} 天）`);
-      }else if(await save('trips',editingTrip.id,{...data,...keep})){$('#tripDlg').close();toast('已更新車趟')}
-    }else if(days.length===1){
-      if(await save('trips',null,data)){$('#tripDlg').close();toast('已新增車趟')}
+      // 舊行程的每一天（單日車趟就只有自己）
+      let old=[{id:editingTrip.id,...editingTrip}];
+      if(editingTrip.seriesId){const snap=await db.collection('trips').where('seriesId','==',editingTrip.seriesId).get();old=snap.docs.map(d=>({id:d.id,...d.data()}))}
+      const vehChanged=(data.vehicleId||null)!==(editingTrip.vehicleId||null);
+      const byDate={};old.forEach(o=>{byDate[o.date]=o});
+      const ops=[];
+      days.forEach((d,i)=>{
+        const o=byDate[d];
+        const veh=o&&!vehChanged?(o.vehicleId||null):data.vehicleId;
+        const ref=o?db.collection('trips').doc(o.id):db.collection('trips').doc();
+        ops.push(ref.set({...data,vehicleId:veh,...meta(d,i)}));
+      });
+      old.filter(o=>!days.includes(o.date)).forEach(o=>ops.push(db.collection('trips').doc(o.id).delete()));
+      await Promise.all(ops);
+      $('#tripDlg').close();toast(n>1?`已更新 ${n} 天的行程`:'已更新車趟');
     }else{
-      const sid='s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-      await Promise.all(days.map((d,i)=>db.collection('trips').doc().set({...data,date:d,seriesId:sid,seriesDay:i+1,seriesDays:days.length})));
-      $('#tripDlg').close();toast(`已新增 ${days.length} 天的行程（${d1.slice(5).replace('-','/')}～${d2.slice(5).replace('-','/')}）`);
+      await Promise.all(days.map((d,i)=>db.collection('trips').doc().set({...data,...meta(d,i)})));
+      $('#tripDlg').close();toast(n>1?`已新增 ${n} 天的行程（${d1.slice(5).replace('-','/')}～${d2.slice(5).replace('-','/')}）`:'已新增車趟');
     }
-    if(d1!==S.date)setDate(d1);
+    if(!days.includes(S.date))setDate(d1);
   }catch(err){toast(errMsg(err))}
   btn.disabled=false;
 });
@@ -1306,7 +1338,7 @@ function reportRows(){
 }
 function reportRecord(t){
   const c=custById(t.customerId),v=tripVeh(t),d=parseYmd(t.date);
-  return {'日期':String(t.date).replace(/-/g,'/'),'星期':WK[d.getDay()],'出車':t.start||'','結束':t.end||'','類型':typeLabel(t.type),'客戶':custName(t),'上車地點':t.pickup||'','目的地':t.destination||'','人數':t.pax??'','需求車種':t.vehicleType||'','車號':v?v.plate:'未派車','車種':v?v.type:'','司機':v?(v.driver||''):'','備註':[seriesTag(t),t.note||''].filter(Boolean).join(' ')};
+  return {'日期':String(t.date).replace(/-/g,'/'),'星期':WK[d.getDay()],'出車':hhmm(tripRange(t)[0]),'結束':hhmm(tripRange(t)[1]),'類型':typeLabel(t.type),'客戶':custName(t),'上車地點':t.pickup||'','目的地':t.destination||'','人數':t.pax??'','需求車種':t.vehicleType||'','車號':v?v.plate:'未派車','車種':v?v.type:'','司機':v?(v.driver||''):'','備註':[seriesTag(t),t.note||''].filter(Boolean).join(' ')};
 }
 function renderReport(){
   {const[yy,mm]=RP.month.split('-').map(Number);const ys=$('#rpY'),ms=$('#rpM');
