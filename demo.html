@@ -291,7 +291,7 @@ footer{color:var(--muted);font-size:12px;padding-block:8px 28px;display:flex;gap
 <div class="rail" id="rail" hidden><button class="collapse-btn" id="collapseBtn" aria-label="收合選單" title="收合選單"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button></div>
 <div class="scrim" id="scrim"></div>
 <main class="wrap">
-  <div id="banner" class="banner demo-banner"><span><b>展示版</b>：這裡使用範例資料，可以自由操作所有功能；修改不會儲存，重新整理就會還原。</span><button class="btn sm" id="demoTour" type="button">看新手教學</button></div>
+  <div id="banner" class="banner demo-banner"><span><b>展示版</b>：可以自由操作所有功能。資料只存在這台電腦的瀏覽器，不會影響正式系統。</span><button class="btn sm" id="demoTour" type="button">看新手教學</button><button class="btn sm ghost" id="demoReset" type="button">還原範例資料</button></div>
   <div class="page-h" id="pageH"><button class="menu-btn" id="menuBtn" aria-label="開啟選單" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><h2 id="pageTitle">儀表板</h2><span class="crumb" id="pageCrumb">派車作業</span><span class="spacer"></span>
       <div class="user" id="userBox" hidden>
         <button class="user-chip" id="userChip" aria-haspopup="true" aria-expanded="false">
@@ -727,10 +727,19 @@ function buildSeed() {
   return s;
 }
 
-const store = buildSeed();
+// 展示版資料存在這台電腦的瀏覽器（localStorage），重新整理不會消失；按「還原範例資料」才會重來
+const STORE_KEY = 'demo.store.v1';
+function loadStore() {
+  try { const raw = localStorage.getItem(STORE_KEY); if (raw) { const o = JSON.parse(raw); if (o && o.trips) return o; } } catch (e) {}
+  return buildSeed();
+}
+const store = loadStore();
+let saveTimer = null;
+function persist() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {} }, 300); }
+function resetDemo() { try { localStorage.removeItem(STORE_KEY); } catch (e) {} location.reload(); }
 const subs = new Set();
 let notifyQueued = false;
-const notify = () => { if (notifyQueued) return; notifyQueued = true; setTimeout(() => { notifyQueued = false; subs.forEach(f => f()); }, 0); };
+const notify = () => { persist(); if (notifyQueued) return; notifyQueued = true; setTimeout(() => { notifyQueued = false; subs.forEach(f => f()); }, 0); };
 const clone = o => JSON.parse(JSON.stringify(o));
 const newId = () => 'id' + Math.random().toString(36).slice(2, 10);
 
@@ -786,7 +795,7 @@ async function updatePassword() {}
 async function reauthenticateWithCredential() {}
 const EmailAuthProvider = { credential: () => ({}) };
 
-return {initializeApp,deleteApp,getFirestore,collection,doc,where,query,onSnapshot,getDocs,getDoc,setDoc,deleteDoc,writeBatch,getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut,signInWithEmailAndPassword,createUserWithEmailAndPassword,updatePassword,reauthenticateWithCredential,EmailAuthProvider};
+return {resetDemo,initializeApp,deleteApp,getFirestore,collection,doc,where,query,onSnapshot,getDocs,getDoc,setDoc,deleteDoc,writeBatch,getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut,signInWithEmailAndPassword,createUserWithEmailAndPassword,updatePassword,reauthenticateWithCredential,EmailAuthProvider};
 })();
 const {initializeApp, deleteApp,getFirestore, collection: fsCollection, doc: fsDoc, query: fsQuery, where: fsWhere,
   onSnapshot: fsOnSnapshot, getDocs, getDoc, setDoc, deleteDoc, writeBatch,getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut,
@@ -1829,6 +1838,7 @@ $('#importFile').onchange=async e=>{
   }catch(err){toast(err instanceof SyntaxError?'檔案格式不對，請選擇匯出的 .json 備份檔':errMsg(err))}
 };
 $('#demoTour').onclick=()=>startTour();
+{const b=$('#demoReset');let armed=false;b.onclick=()=>{if(!armed){armed=true;b.textContent='再按一次：清除所有修改';b.classList.add('danger');setTimeout(()=>{armed=false;b.textContent='還原範例資料';b.classList.remove('danger')},4000);return}__fb.resetDemo()}}
 boot();
 </script>
 </body>
